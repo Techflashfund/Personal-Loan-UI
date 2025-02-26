@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -8,15 +8,71 @@ import useAuthStore from '@/store/user'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [errors, setErrors] = useState({
+    email: '',
+    password: '',
+    server: ''
+  })
+  const [formTouched, setFormTouched] = useState(false)
   const setAuth = useAuthStore((state) => state.setAuth)
+
+  // Reset server error when form inputs change
+  useEffect(() => {
+    if (formTouched) {
+      setErrors(prev => ({ ...prev, server: '' }))
+    }
+  }, [email, password, formTouched])
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!email) return 'Email is required'
+    if (!emailRegex.test(email)) return 'Please enter a valid email address'
+    return ''
+  }
+
+  const validatePassword = (password) => {
+    if (!password) return 'Password is required'
+    if (password.length < 6) return 'Password must be at least 6 characters'
+    return ''
+  }
+
+  const validateForm = () => {
+    const emailError = validateEmail(email)
+    const passwordError = validatePassword(password)
+    
+    setErrors({
+      email: emailError,
+      password: passwordError,
+      server: ''
+    })
+
+    return !emailError && !passwordError
+  }
+
+  const handleInputChange = (field, value) => {
+    if (!formTouched) setFormTouched(true)
+    
+    if (field === 'email') {
+      setEmail(value)
+      setErrors(prev => ({ ...prev, email: '' }))
+    } else if (field === 'password') {
+      setPassword(value)
+      setErrors(prev => ({ ...prev, password: '' }))
+    }
+  }
 
   const handleLogin = async (e) => {
     e.preventDefault()
+    
+    // Validate form before submission
+    if (!validateForm()) return
+    
     setLoading(true)
 
     try {
@@ -37,14 +93,35 @@ export default function LoginPage() {
         })
         window.location.href = '/form'
       } else {
-        throw new Error(data.message || 'Login failed')
+        // Handle different error types based on status code or response
+        if (res.status === 401) {
+          setErrors(prev => ({ ...prev, server: 'Invalid email or password' }))
+        } else if (res.status === 429) {
+          setErrors(prev => ({ ...prev, server: 'Too many attempts. Please try again later' }))
+        } else {
+          setErrors(prev => ({ ...prev, server: data.message || 'Login failed. Please try again' }))
+        }
       }
     } catch (error) {
-      toast.error('Error', {
-        description: error.message
+      // Handle network errors
+      setErrors(prev => ({ 
+        ...prev, 
+        server: 'Network error. Please check your connection and try again'
+      }))
+      
+      toast.error('Connection Error', {
+        description: 'Unable to connect to the server'
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleBlur = (field) => {
+    if (field === 'email') {
+      setErrors(prev => ({ ...prev, email: validateEmail(email) }))
+    } else if (field === 'password') {
+      setErrors(prev => ({ ...prev, password: validatePassword(password) }))
     }
   }
 
@@ -118,26 +195,44 @@ export default function LoginPage() {
                 </motion.p>
               </div>
 
+              {errors.server && (
+                <Alert className="mb-6 bg-red-50 text-red-800 border-red-200">
+                  <AlertDescription>{errors.server}</AlertDescription>
+                </Alert>
+              )}
+
               <form onSubmit={handleLogin} className="space-y-6">
                 <div>
                   <Input
                     type="email"
                     placeholder="Enter your email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    onBlur={() => handleBlur('email')}
                     required
-                    className="h-12 bg-white/50 border-slate-200 focus:border-blue-400 rounded-lg px-4"
+                    className={`h-12 bg-white/50 border-slate-200 focus:border-blue-400 rounded-lg px-4 ${
+                      errors.email ? 'border-red-300 focus:border-red-500' : ''
+                    }`}
                   />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  )}
                 </div>
                 <div>
                   <Input
                     type="password"
                     placeholder="Enter your password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    onBlur={() => handleBlur('password')}
                     required
-                    className="h-12 bg-white/50 border-slate-200 focus:border-blue-400 rounded-lg px-4"
+                    className={`h-12 bg-white/50 border-slate-200 focus:border-blue-400 rounded-lg px-4 ${
+                      errors.password ? 'border-red-300 focus:border-red-500' : ''
+                    }`}
                   />
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                  )}
                 </div>
                 <div className="flex justify-end">
                   <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
@@ -149,7 +244,15 @@ export default function LoginPage() {
                   className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-base font-medium rounded-lg shadow-lg transition-all duration-200"
                   disabled={loading}
                 >
-                  {loading ? 'Signing in...' : 'Sign In'}
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Signing in...
+                    </span>
+                  ) : 'Sign In'}
                 </Button>
               </form>
 
