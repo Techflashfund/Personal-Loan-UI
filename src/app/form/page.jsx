@@ -17,7 +17,22 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import axios from "axios"
-import { ChevronLeft, ChevronRight, Check, AlertCircle } from "lucide-react"
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Check, 
+  AlertCircle, 
+  User, 
+  Briefcase, 
+  Home, 
+  Calendar, 
+  AtSign, 
+  Phone, 
+  CreditCard,
+  Building,
+  MapPin,
+  FileText
+} from "lucide-react"
 
 export default function UserDetailsForm() {
   const router = useRouter()
@@ -56,7 +71,6 @@ export default function UserDetailsForm() {
   const validateForm = (data, currentStep) => {
     let newErrors = {}
     
-    // Validation based on current step
     if (currentStep === 1) {
       if (!data.firstName.trim()) newErrors.firstName = "First name is required"
       if (!data.lastName.trim()) newErrors.lastName = "Last name is required"
@@ -82,7 +96,6 @@ export default function UserDetailsForm() {
       else if (isNaN(data.income) || Number(data.income) <= 0) 
         newErrors.income = "Please enter a valid income"
       if (!data.companyName.trim()) newErrors.companyName = "Company name is required"
-      // udyamNumber is optional, no validation needed
     } 
     else if (currentStep === 3) {
       if (!data.addressL1.trim()) newErrors.addressL1 = "Address line 1 is required"
@@ -113,7 +126,6 @@ export default function UserDetailsForm() {
     }))
   }
 
-  // Validate on touched field change
   useEffect(() => {
     const newErrors = validateForm(formData, step)
     setErrors(newErrors)
@@ -134,12 +146,10 @@ export default function UserDetailsForm() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    // Final validation before submission
     const formErrors = validateForm(formData, 3)
     setErrors(formErrors)
     
     if (Object.keys(formErrors).length > 0) {
-      // Mark all fields as touched to show errors
       const allTouched = Object.keys(formData).reduce((acc, field) => {
         acc[field] = true
         return acc
@@ -194,7 +204,6 @@ export default function UserDetailsForm() {
   const nextStep = () => {
     const stepErrors = validateForm(formData, step)
     
-    // Mark all fields for current step as touched
     const currentStepFields = Object.keys(stepErrors)
     const newTouched = { ...touched }
     currentStepFields.forEach(field => {
@@ -213,25 +222,8 @@ export default function UserDetailsForm() {
     window.scrollTo(0, 0)
   }
 
-  const renderStepIndicator = () => {
-    return (
-      <div className="flex justify-center items-center space-x-2 mb-6">
-        {[1, 2, 3].map((item) => (
-          <div 
-            key={item} 
-            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              step === item 
-                ? 'bg-blue-600 text-white' 
-                : step > item 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-gray-200 text-gray-600'
-            }`}
-          >
-            {step > item ? <Check size={16} /> : item}
-          </div>
-        ))}
-      </div>
-    )
+  const getProgressPercentage = () => {
+    return (step / 3) * 100;
   }
 
   const getStepTitle = () => {
@@ -240,6 +232,15 @@ export default function UserDetailsForm() {
       case 2: return "Employment Details";
       case 3: return "Address Information";
       default: return "";
+    }
+  }
+
+  const getStepIcon = () => {
+    switch(step) {
+      case 1: return <User className="w-6 h-6 text-white" />;
+      case 2: return <Briefcase className="w-6 h-6 text-white" />;
+      case 3: return <Home className="w-6 h-6 text-white" />;
+      default: return null;
     }
   }
 
@@ -254,352 +255,369 @@ export default function UserDetailsForm() {
     );
   };
 
+  const InputField = ({ label, icon, id, name, type = "text", value, onChange, onBlur, error, touched, placeholder, ...props }) => {
+    return (
+      <div className="space-y-1.5">
+        <Label htmlFor={id} className="text-sm font-medium flex items-center text-gray-700">
+          {icon && <span className="mr-2 text-indigo-500">{icon}</span>}
+          {label} {props.required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
+        <div className="relative">
+          <Input
+            id={id}
+            name={name}
+            type={type}
+            value={value}
+            onChange={onChange}
+            onBlur={onBlur}
+            placeholder={placeholder}
+            className={`rounded-xl border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${touched && error ? 'border-red-300 bg-red-50' : ''}`}
+            {...props}
+          />
+        </div>
+        {touched && <ErrorMessage error={error} />}
+      </div>
+    );
+  };
+
   const renderStep = () => {
     switch(step) {
       case 1:
         return (
-          <Card className="border-none shadow-lg">
-            <CardHeader className="bg-indigo-600 text-white rounded-t-lg">
-              <CardTitle className="text-center">{getStepTitle()}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName" className="text-sm font-medium">First Name *</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    onBlur={() => handleBlur('firstName')}
-                    required
-                    className={`mt-1 ${touched.firstName && errors.firstName ? 'border-red-500' : ''}`}
-                  />
-                  {touched.firstName && <ErrorMessage error={errors.firstName} />}
-                </div>
-                <div>
-                  <Label htmlFor="lastName" className="text-sm font-medium">Last Name *</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    onBlur={() => handleBlur('lastName')}
-                    required
-                    className={`mt-1 ${touched.lastName && errors.lastName ? 'border-red-500' : ''}`}
-                  />
-                  {touched.lastName && <ErrorMessage error={errors.lastName} />}
-                </div>
-              </div>
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <InputField
+                label="First Name"
+                icon={<User size={16} />}
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                onBlur={() => handleBlur('firstName')}
+                error={errors.firstName}
+                touched={touched.firstName}
+                placeholder="John"
+                required
+              />
+              
+              <InputField
+                label="Last Name"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                onBlur={() => handleBlur('lastName')}
+                error={errors.lastName}
+                touched={touched.lastName}
+                placeholder="Doe"
+                required
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="dob" className="text-sm font-medium">Date of Birth *</Label>
-                <Input
-                  type="date"
-                  id="dob"
-                  name="dob"
-                  value={formData.dob}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('dob')}
-                  required
-                  className={`mt-1 ${touched.dob && errors.dob ? 'border-red-500' : ''}`}
-                />
-                {touched.dob && <ErrorMessage error={errors.dob} />}
-              </div>
+            <InputField
+              label="Date of Birth"
+              icon={<Calendar size={16} />}
+              id="dob"
+              name="dob"
+              type="date"
+              value={formData.dob}
+              onChange={handleChange}
+              onBlur={() => handleBlur('dob')}
+              error={errors.dob}
+              touched={touched.dob}
+              required
+            />
 
-              <div>
-                <Label htmlFor="gender" className="text-sm font-medium">Gender *</Label>
-                <Select 
-                  name="gender" 
-                  onValueChange={(value) => {
-                    setFormData(prev => ({ ...prev, gender: value }))
-                    setTouched(prev => ({ ...prev, gender: true }))
-                  }}
+            <div className="space-y-1.5">
+              <Label htmlFor="gender" className="text-sm font-medium flex items-center text-gray-700">
+                <User size={16} className="mr-2 text-indigo-500" />
+                Gender <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Select 
+                name="gender" 
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, gender: value }))
+                  setTouched(prev => ({ ...prev, gender: true }))
+                }}
+              >
+                <SelectTrigger 
+                  className={`rounded-xl border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${touched.gender && errors.gender ? 'border-red-300 bg-red-50' : ''}`}
                 >
-                  <SelectTrigger 
-                    className={`mt-1 ${touched.gender && errors.gender ? 'border-red-500' : ''}`}
-                  >
-                    <SelectValue placeholder="Select Gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="transgender">Transgender</SelectItem>
-                  </SelectContent>
-                </Select>
-                {touched.gender && <ErrorMessage error={errors.gender} />}
-              </div>
+                  <SelectValue placeholder="Select Gender" />
+                </SelectTrigger>
+                <SelectContent className="rounded-lg border-gray-200 shadow-lg">
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="transgender">Transgender</SelectItem>
+                </SelectContent>
+              </Select>
+              {touched.gender && <ErrorMessage error={errors.gender} />}
+            </div>
 
-              <div>
-                <Label htmlFor="pan" className="text-sm font-medium">PAN Number *</Label>
-                <Input
-                  id="pan"
-                  name="pan"
-                  value={formData.pan}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('pan')}
-                  className={`uppercase mt-1 ${touched.pan && errors.pan ? 'border-red-500' : ''}`}
-                  required
-                />
-                {touched.pan && <ErrorMessage error={errors.pan} />}
-              </div>
+            <InputField
+              label="PAN Number"
+              icon={<CreditCard size={16} />}
+              id="pan"
+              name="pan"
+              value={formData.pan}
+              onChange={handleChange}
+              onBlur={() => handleBlur('pan')}
+              error={errors.pan}
+              touched={touched.pan}
+              placeholder="ABCDE1234F"
+              className="uppercase"
+              required
+            />
 
-              <div>
-                <Label htmlFor="email" className="text-sm font-medium">Email *</Label>
-                <Input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('email')}
-                  required
-                  className={`mt-1 ${touched.email && errors.email ? 'border-red-500' : ''}`}
-                />
-                {touched.email && <ErrorMessage error={errors.email} />}
-              </div>
+            <InputField
+              label="Email"
+              icon={<AtSign size={16} />}
+              id="email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              onBlur={() => handleBlur('email')}
+              error={errors.email}
+              touched={touched.email}
+              placeholder="john.doe@example.com"
+              required
+            />
 
-              <div>
-                <Label htmlFor="officialEmail" className="text-sm font-medium">Official Email *</Label>
-                <Input
-                  type="email"
-                  id="officialEmail"
-                  name="officialEmail"
-                  value={formData.officialEmail}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('officialEmail')}
-                  required
-                  className={`mt-1 ${touched.officialEmail && errors.officialEmail ? 'border-red-500' : ''}`}
-                />
-                {touched.officialEmail && <ErrorMessage error={errors.officialEmail} />}
-              </div>
+            <InputField
+              label="Official Email"
+              icon={<AtSign size={16} />}
+              id="officialEmail"
+              name="officialEmail"
+              type="email"
+              value={formData.officialEmail}
+              onChange={handleChange}
+              onBlur={() => handleBlur('officialEmail')}
+              error={errors.officialEmail}
+              touched={touched.officialEmail}
+              placeholder="john.doe@company.com"
+              required
+            />
 
-              <div>
-                <Label htmlFor="contactNumber" className="text-sm font-medium">Contact Number *</Label>
-                <Input
-                  type="tel"
-                  id="contactNumber"
-                  name="contactNumber"
-                  value={formData.contactNumber}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('contactNumber')}
-                  required
-                  className={`mt-1 ${touched.contactNumber && errors.contactNumber ? 'border-red-500' : ''}`}
-                />
-                {touched.contactNumber && <ErrorMessage error={errors.contactNumber} />}
-              </div>
-            </CardContent>
-          </Card>
+            <InputField
+              label="Contact Number"
+              icon={<Phone size={16} />}
+              id="contactNumber"
+              name="contactNumber"
+              type="tel"
+              value={formData.contactNumber}
+              onChange={handleChange}
+              onBlur={() => handleBlur('contactNumber')}
+              error={errors.contactNumber}
+              touched={touched.contactNumber}
+              placeholder="9123456789"
+              required
+            />
+          </div>
         );
       case 2:
         return (
-          <Card className="border-none shadow-lg">
-            <CardHeader className="bg-indigo-600 text-white rounded-t-lg">
-              <CardTitle className="text-center">{getStepTitle()}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-6">
-              <div>
-                <Label htmlFor="employmentType" className="text-sm font-medium">Employment Type *</Label>
-                <Select 
-                  name="employmentType"
-                  onValueChange={(value) => {
-                    setFormData(prev => ({ ...prev, employmentType: value }))
-                    setTouched(prev => ({ ...prev, employmentType: true }))
-                  }}
+          <div className="space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="employmentType" className="text-sm font-medium flex items-center text-gray-700">
+                <Briefcase size={16} className="mr-2 text-indigo-500" />
+                Employment Type <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Select 
+                name="employmentType"
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, employmentType: value }))
+                  setTouched(prev => ({ ...prev, employmentType: true }))
+                }}
+              >
+                <SelectTrigger 
+                  className={`rounded-xl border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${touched.employmentType && errors.employmentType ? 'border-red-300 bg-red-50' : ''}`}
                 >
-                  <SelectTrigger 
-                    className={`mt-1 ${touched.employmentType && errors.employmentType ? 'border-red-500' : ''}`}
-                  >
-                    <SelectValue placeholder="Select Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="salaried">Salaried</SelectItem>
-                    <SelectItem value="selfEmployed">Self Employed</SelectItem>
-                  </SelectContent>
-                </Select>
-                {touched.employmentType && <ErrorMessage error={errors.employmentType} />}
-              </div>
+                  <SelectValue placeholder="Select Type" />
+                </SelectTrigger>
+                <SelectContent className="rounded-lg border-gray-200 shadow-lg">
+                  <SelectItem value="salaried">Salaried</SelectItem>
+                  <SelectItem value="selfEmployed">Self Employed</SelectItem>
+                </SelectContent>
+              </Select>
+              {touched.employmentType && <ErrorMessage error={errors.employmentType} />}
+            </div>
 
-              <div>
-                <Label htmlFor="endUse" className="text-sm font-medium">End Use *</Label>
-                <Select 
-                  name="endUse"
-                  onValueChange={(value) => {
-                    setFormData(prev => ({ ...prev, endUse: value }))
-                    setTouched(prev => ({ ...prev, endUse: true }))
-                  }}
+            <div className="space-y-1.5">
+              <Label htmlFor="endUse" className="text-sm font-medium flex items-center text-gray-700">
+                <FileText size={16} className="mr-2 text-indigo-500" />
+                End Use <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Select 
+                name="endUse"
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, endUse: value }))
+                  setTouched(prev => ({ ...prev, endUse: true }))
+                }}
+              >
+                <SelectTrigger 
+                  className={`rounded-xl border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${touched.endUse && errors.endUse ? 'border-red-300 bg-red-50' : ''}`}
                 >
-                  <SelectTrigger 
-                    className={`mt-1 ${touched.endUse && errors.endUse ? 'border-red-500' : ''}`}
-                  >
-                    <SelectValue placeholder="Select Purpose" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="consumerDurablePurchase">Consumer Durable Purchase</SelectItem>
-                    <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="travel">Travel</SelectItem>
-                    <SelectItem value="health">Health</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-                {touched.endUse && <ErrorMessage error={errors.endUse} />}
-              </div>
+                  <SelectValue placeholder="Select Purpose" />
+                </SelectTrigger>
+                <SelectContent className="rounded-lg border-gray-200 shadow-lg">
+                  <SelectItem value="consumerDurablePurchase">Consumer Durable Purchase</SelectItem>
+                  <SelectItem value="education">Education</SelectItem>
+                  <SelectItem value="travel">Travel</SelectItem>
+                  <SelectItem value="health">Health</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              {touched.endUse && <ErrorMessage error={errors.endUse} />}
+            </div>
 
-              <div>
-                <Label htmlFor="income" className="text-sm font-medium">Monthly Income *</Label>
-                <Input
-                  type="number"
-                  id="income"
-                  name="income"
-                  value={formData.income}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('income')}
-                  required
-                  className={`mt-1 ${touched.income && errors.income ? 'border-red-500' : ''}`}
-                />
-                {touched.income && <ErrorMessage error={errors.income} />}
-              </div>
+            <InputField
+              label="Monthly Income"
+              icon={<FileText size={16} />}
+              id="income"
+              name="income"
+              type="number"
+              value={formData.income}
+              onChange={handleChange}
+              onBlur={() => handleBlur('income')}
+              error={errors.income}
+              touched={touched.income}
+              placeholder="30000"
+              required
+            />
 
-              <div>
-                <Label htmlFor="companyName" className="text-sm font-medium">Company Name *</Label>
-                <Input
-                  id="companyName"
-                  name="companyName"
-                  value={formData.companyName}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('companyName')}
-                  required
-                  className={`mt-1 ${touched.companyName && errors.companyName ? 'border-red-500' : ''}`}
-                />
-                {touched.companyName && <ErrorMessage error={errors.companyName} />}
-              </div>
+            <InputField
+              label="Company Name"
+              icon={<Building size={16} />}
+              id="companyName"
+              name="companyName"
+              value={formData.companyName}
+              onChange={handleChange}
+              onBlur={() => handleBlur('companyName')}
+              error={errors.companyName}
+              touched={touched.companyName}
+              placeholder="ABC Corporation"
+              required
+            />
 
-              <div>
-                <Label htmlFor="udyamNumber" className="text-sm font-medium">Udyam Number (Optional)</Label>
-                <Input
-                  id="udyamNumber"
-                  name="udyamNumber"
-                  value={formData.udyamNumber}
-                  onChange={handleChange}
-                  className="mt-1"
-                />
-              </div>
-            </CardContent>
-          </Card>
+            <InputField
+              label="Udyam Number"
+              icon={<FileText size={16} />}
+              id="udyamNumber"
+              name="udyamNumber"
+              value={formData.udyamNumber}
+              onChange={handleChange}
+              placeholder="UDYAM-XX-XX-XXXXXXX"
+            />
+          </div>
         );
       case 3:
         return (
-          <Card className="border-none shadow-lg">
-            <CardHeader className="bg-indigo-600 text-white rounded-t-lg">
-              <CardTitle className="text-center">{getStepTitle()}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-6">
-              <div>
-                <Label htmlFor="addressL1" className="text-sm font-medium">Address Line 1 *</Label>
-                <Input
-                  id="addressL1"
-                  name="addressL1"
-                  value={formData.addressL1}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('addressL1')}
+          <div className="space-y-5">
+            <InputField
+              label="Address Line 1"
+              icon={<Home size={16} />}
+              id="addressL1"
+              name="addressL1"
+              value={formData.addressL1}
+              onChange={handleChange}
+              onBlur={() => handleBlur('addressL1')}
+              error={errors.addressL1}
+              touched={touched.addressL1}
+              placeholder="123 Main Street"
+              required
+            />
+
+            <InputField
+              label="Address Line 2"
+              icon={<Home size={16} />}
+              id="addressL2"
+              name="addressL2"
+              value={formData.addressL2}
+              onChange={handleChange}
+              placeholder="Apartment 4B"
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <InputField
+                label="City"
+                icon={<MapPin size={16} />}
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                onBlur={() => handleBlur('city')}
+                error={errors.city}
+                touched={touched.city}
+                placeholder="Mumbai"
+                required
+              />
+
+              <InputField
+                label="State"
+                id="state"
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                onBlur={() => handleBlur('state')}
+                error={errors.state}
+                touched={touched.state}
+                placeholder="Maharashtra"
+                required
+              />
+            </div>
+
+            <InputField
+              label="Pincode"
+              icon={<MapPin size={16} />}
+              id="pincode"
+              name="pincode"
+              value={formData.pincode}
+              onChange={handleChange}
+              onBlur={() => handleBlur('pincode')}
+              error={errors.pincode}
+              touched={touched.pincode}
+              placeholder="400001"
+              required
+            />
+
+            <InputField
+              label="AA ID"
+              icon={<CreditCard size={16} />}
+              id="aa_id"
+              name="aa_id"
+              value={formData.aa_id}
+              onChange={handleChange}
+              onBlur={() => handleBlur('aa_id')}
+              error={errors.aa_id}
+              touched={touched.aa_id}
+              placeholder="Your Account Aggregator ID"
+              required
+            />
+
+            <div className="flex items-start space-x-3 pt-2">
+              <div className="mt-1">
+                <Checkbox
+                  id="bureauConsent"
+                  name="bureauConsent"
+                  checked={formData.bureauConsent}
+                  onCheckedChange={(checked) => {
+                    setFormData(prev => ({ ...prev, bureauConsent: checked }))
+                    setTouched(prev => ({ ...prev, bureauConsent: true }))
+                  }}
                   required
-                  className={`mt-1 ${touched.addressL1 && errors.addressL1 ? 'border-red-500' : ''}`}
+                  className={`rounded text-indigo-600 focus:ring-indigo-500 ${touched.bureauConsent && errors.bureauConsent ? 'border-red-500' : ''}`}
                 />
-                {touched.addressL1 && <ErrorMessage error={errors.addressL1} />}
               </div>
-
               <div>
-                <Label htmlFor="addressL2" className="text-sm font-medium">Address Line 2</Label>
-                <Input
-                  id="addressL2"
-                  name="addressL2"
-                  value={formData.addressL2}
-                  onChange={handleChange}
-                  className="mt-1"
-                />
+                <Label htmlFor="bureauConsent" className="text-sm text-gray-700 font-medium">
+                  I agree to bureau consent check <span className="text-red-500">*</span>
+                </Label>
+                <p className="text-xs text-gray-500 mt-1">By checking this box, you authorize us to perform a credit check with credit bureaus.</p>
+                {touched.bureauConsent && <ErrorMessage error={errors.bureauConsent} />}
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="city" className="text-sm font-medium">City *</Label>
-                  <Input
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    onBlur={() => handleBlur('city')}
-                    required
-                    className={`mt-1 ${touched.city && errors.city ? 'border-red-500' : ''}`}
-                  />
-                  {touched.city && <ErrorMessage error={errors.city} />}
-                </div>
-
-                <div>
-                  <Label htmlFor="state" className="text-sm font-medium">State *</Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    onBlur={() => handleBlur('state')}
-                    required
-                    className={`mt-1 ${touched.state && errors.state ? 'border-red-500' : ''}`}
-                  />
-                  {touched.state && <ErrorMessage error={errors.state} />}
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="pincode" className="text-sm font-medium">Pincode *</Label>
-                <Input
-                  id="pincode"
-                  name="pincode"
-                  value={formData.pincode}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('pincode')}
-                  required
-                  className={`mt-1 ${touched.pincode && errors.pincode ? 'border-red-500' : ''}`}
-                />
-                {touched.pincode && <ErrorMessage error={errors.pincode} />}
-              </div>
-
-              <div>
-                <Label htmlFor="aa_id" className="text-sm font-medium">AA ID *</Label>
-                <Input
-                  id="aa_id"
-                  name="aa_id"
-                  value={formData.aa_id}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('aa_id')}
-                  required
-                  className={`mt-1 ${touched.aa_id && errors.aa_id ? 'border-red-500' : ''}`}
-                />
-                {touched.aa_id && <ErrorMessage error={errors.aa_id} />}
-              </div>
-
-              <div className="flex items-start space-x-2 pt-4">
-                <div className="mt-1">
-                  <Checkbox
-                    id="bureauConsent"
-                    name="bureauConsent"
-                    checked={formData.bureauConsent}
-                    onCheckedChange={(checked) => {
-                      setFormData(prev => ({ ...prev, bureauConsent: checked }))
-                      setTouched(prev => ({ ...prev, bureauConsent: true }))
-                    }}
-                    required
-                    className={touched.bureauConsent && errors.bureauConsent ? 'border-red-500' : ''}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="bureauConsent" className="text-sm">
-                    I agree to bureau consent check *
-                  </Label>
-                  {touched.bureauConsent && <ErrorMessage error={errors.bureauConsent} />}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       default:
         return null;
@@ -607,23 +625,72 @@ export default function UserDetailsForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4">
-      <div className="max-w-md mx-auto space-y-6">
-        <div className="flex justify-center mb-4 pt-6">
-          <Image
-            src="/FlashfundLogo.png"
-            alt="Brand Logo"
-            width={180}
-            height={40}
-            priority
-            className="animate-pulse"
-          />
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white p-4">
+      <div className="max-w-md mx-auto">
+        <div className="flex justify-center mb-8 pt-6">
+          <div className="relative">
+            <Image
+              src="/FlashfundLogo.png"
+              alt="Brand Logo"
+              width={180}
+              height={40}
+              priority
+              className="animate-pulse"
+            />
+            <div className="absolute -bottom-4 left-0 right-0 text-center">
+              <p className="text-xs text-indigo-600 font-medium">Quick & Easy Loan Application</p>
+            </div>
+          </div>
         </div>
 
-        {renderStepIndicator()}
+        {/* Progress bar */}
+        <div className="mb-8">
+          <div className="flex justify-between mb-2">
+            <div className="flex items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                step >= 1 ? 'bg-indigo-600' : 'bg-gray-300'
+              }`}>
+                {step > 1 ? <Check size={16} className="text-white" /> : <User size={16} className="text-white" />}
+              </div>
+              <span className={`ml-2 text-xs ${step >= 1 ? 'text-indigo-600 font-medium' : 'text-gray-500'}`}>Personal</span>
+            </div>
+            <div className="flex items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                step >= 2 ? 'bg-indigo-600' : 'bg-gray-300'
+              }`}>
+                {step > 2 ? <Check size={16} className="text-white" /> : <Briefcase size={16} className="text-white" />}
+              </div>
+              <span className={`ml-2 text-xs ${step >= 2 ? 'text-indigo-600 font-medium' : 'text-gray-500'}`}>Employment</span>
+            </div>
+            <div className="flex items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                step >= 3 ? 'bg-indigo-600' : 'bg-gray-300'
+              }`}>
+                {step > 3 ? <Check size={16} className="text-white" /> : <Home size={16} className="text-white" />}
+              </div>
+              <span className={`ml-2 text-xs ${step >= 3 ? 'text-indigo-600 font-medium' : 'text-gray-500'}`}>Address</span>
+            </div>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div 
+              className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-in-out" 
+              style={{ width: `${getProgressPercentage()}%` }}
+            ></div>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {renderStep()}
+          <Card className="border-none shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="bg-indigo-500 p-4 flex flex-row items-center gap-3">
+              <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                {getStepIcon()}
+              </div>
+              <CardTitle className="text-white text-lg">{getStepTitle()}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {renderStep()}
+            </CardContent>
+          </Card>
 
           <div className="flex justify-between mt-6">
             {step > 1 ? (
@@ -631,7 +698,7 @@ export default function UserDetailsForm() {
                 type="button" 
                 onClick={prevStep}
                 variant="outline"
-                className="flex items-center"
+                className="flex items-center rounded-xl border-2 border-indigo-100 hover:bg-indigo-50 text-indigo-600"
               >
                 <ChevronLeft className="mr-1" size={16} />
                 Back
@@ -644,7 +711,7 @@ export default function UserDetailsForm() {
               <Button
                 type="button"
                 onClick={nextStep}
-                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center ml-auto"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white flex items-center ml-auto rounded-xl shadow-lg shadow-indigo-200"
               >
                 Next
                 <ChevronRight className="ml-1" size={16} />
@@ -652,7 +719,7 @@ export default function UserDetailsForm() {
             ) : (
               <Button
                 type="submit"
-                className="bg-green-600 hover:bg-green-700 text-white ml-auto"
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white ml-auto rounded-xl shadow-lg shadow-green-200 w-full py-6 font-medium text-lg"
                 disabled={isLoading}
               >
                 {isLoading ? 'Submitting...' : 'Submit Application'}
@@ -660,6 +727,11 @@ export default function UserDetailsForm() {
             )}
           </div>
         </form>
+
+        <div className="mt-8 text-center text-xs text-gray-500">
+          <p>© 2025 FlashFund. All rights reserved.</p>
+          <p className="mt-1">Your information is secure and encrypted.</p>
+        </div>
       </div>
     </div>
   )
