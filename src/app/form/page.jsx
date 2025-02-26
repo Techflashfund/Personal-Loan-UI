@@ -70,7 +70,7 @@ export default function UserDetailsForm() {
       }
 
       const response = await axios.post(
-        `https:/pl.pr.flashfund.in/form/submit/${userId}`,
+        `https://pl.pr.flashfund.in/form/submit/${userId}`,
         formattedData,
         {
           headers: {
