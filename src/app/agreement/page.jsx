@@ -7,8 +7,10 @@ import { motion } from 'framer-motion';
 import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useRouter } from 'next/navigation';
 
 export default function LoanAgreementPage() {
+  const router = useRouter()
   const transactionId = useAuthStore((state) => state.transactionId);
   const [formUrl, setFormUrl] = useState('')
   const [formId, setFormId] = useState('')
@@ -144,6 +146,7 @@ export default function LoanAgreementPage() {
       )
       
       console.log('Confirmation response:', response.data);
+      router.push('/disbursement')
       setConfirmed(true)
       setConfirming(false)
     } catch (error) {

@@ -14,12 +14,13 @@ const ReturningUserDashboard = () => {
   const router = useRouter();
   const userId = useAuthStore((state) => state.userId);
   const token = useAuthStore((state) => state.token)
-  const setTransactionId = useAuthStore((state) => state.setTransactionId)
+
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hasMissedEmi, setHasMissedEmi] = useState(false);
+  const [transactionId, setTransactionId] = useState(null);
   
   useEffect(() => {
     // Only proceed with API call if userId exists and is not null
@@ -58,6 +59,11 @@ const ReturningUserDashboard = () => {
         if (!data.loans || data.loans.length === 0) {
           router.push('/main');
           return;
+        }
+        
+        // Store transaction ID for later use
+        if (data.loans[0]?.response?.context?.transaction_id) {
+          setTransactionId(data.loans[0].response.context.transaction_id);
         }
         
         // Process the loan data to match our component's expectations
@@ -121,7 +127,7 @@ const ReturningUserDashboard = () => {
     // Get next payment date and amount
     const currentDate = new Date();
     const nextPayment = installments.find(payment => {
-      const endDate = new Date(payment.time.range.end);
+      const endDate = new Date(payment.time.range.end||null);
       return endDate >= currentDate && payment.status === "NOT-PAID";
     });
     
@@ -151,17 +157,60 @@ const ReturningUserDashboard = () => {
   // Handle payment option clicks
   const handleForeclosure = async () => {
     try {
-      // Call foreclosure API
-      const response = await fetch('https://pl.pr.flashfund.in/foreclosure', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userId })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+      // Check if we already have the transaction ID
+      if (!transactionId) {
+        // If not, fetch loan status to get the transaction ID
+        const loanStatusResponse = await fetch('https://pl.pr.flashfund.in/check-loan-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ userId })
+        });
+        
+        if (!loanStatusResponse.ok) {
+          throw new Error(`Error fetching loan status: ${loanStatusResponse.status}`);
+        }
+        
+        const loanData = await loanStatusResponse.json();
+        
+        // Extract transaction ID from the loan response
+        const txnId = loanData.loans[0]?.response?.context?.transaction_id;
+        
+        if (!txnId) {
+          throw new Error("Transaction ID not found in loan data");
+        }
+        
+        // Set transaction ID for future use
+        setTransactionId(txnId);
+        
+        // Call foreclosure API with transaction ID
+        const response = await fetch('https://pl.pr.flashfund.in/foreclosure', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ transaction_id: txnId })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Foreclosure API Error: ${response.status}`);
+        }
+      } else {
+        // If we already have the transaction ID, use it directly
+        console.log("Using existing transaction ID for foreclosure:", transactionId);
+        
+        const response = await fetch('https://pl.pr.flashfund.in/foreclosure', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ transactionId: transactionId })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Foreclosure API Error: ${response.status}`);
+        }
       }
       
       // Navigate to foreclosure component
