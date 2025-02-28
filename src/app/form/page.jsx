@@ -259,7 +259,7 @@ export default function UserDetailsForm() {
       case 1:
         return (
           <Card className="border-none shadow-lg">
-            <CardHeader className="bg-indigo-600 text-white rounded-t-lg">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-t-lg">
               <CardTitle className="text-center">{getStepTitle()}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
@@ -394,7 +394,7 @@ export default function UserDetailsForm() {
       case 2:
         return (
           <Card className="border-none shadow-lg">
-            <CardHeader className="bg-indigo-600 text-white rounded-t-lg">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-t-lg">
               <CardTitle className="text-center">{getStepTitle()}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
@@ -490,7 +490,7 @@ export default function UserDetailsForm() {
       case 3:
         return (
           <Card className="border-none shadow-lg">
-            <CardHeader className="bg-indigo-600 text-white rounded-t-lg">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-t-lg">
               <CardTitle className="text-center">{getStepTitle()}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6">

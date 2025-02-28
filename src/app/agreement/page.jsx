@@ -16,6 +16,8 @@ export default function LoanAgreementPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [useRedirect, setUseRedirect] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmed, setConfirmed] = useState(false)
 
   // Monitor for transactionId changes
   useEffect(() => {
@@ -121,8 +123,34 @@ export default function LoanAgreementPage() {
     window.history.back();
   }
 
-  const redirectToDashboard = () => {
-    window.location.href = '/dashboard';
+  const confirmLoan = async () => {
+    if (!transactionId) {
+      setError('Transaction ID not found')
+      return
+    }
+    
+    setConfirming(true)
+    
+    try {
+      console.log('Confirming loan agreement with transactionId:', transactionId);
+      
+      const response = await axios.post('https://pl.pr.flashfund.in/agrement/confirm', 
+        { transactionId },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+      
+      console.log('Confirmation response:', response.data);
+      setConfirmed(true)
+      setConfirming(false)
+    } catch (error) {
+      console.error('Error confirming loan agreement:', error)
+      setError('Failed to confirm loan agreement')
+      setConfirming(false)
+    }
   }
 
   const redirectToForm = () => {
@@ -370,23 +398,50 @@ export default function LoanAgreementPage() {
                   transition={{ delay: 0.3 }}
                   className="text-gray-600 mb-8"
                 >
-                  Thank you for signing your loan agreement. Your application process is now complete.
+                  {confirmed 
+                    ? "Your loan has been confirmed. Please wait for disbursement to your account." 
+                    : "Please confirm your loan to proceed with the disbursement process."}
                 </motion.p>
                 
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button 
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg"
-                    onClick={redirectToDashboard}
+                {!confirmed ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    Go to Dashboard
-                  </Button>
-                </motion.div>
+                    <Button 
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg"
+                      onClick={confirmLoan}
+                      disabled={confirming}
+                    >
+                      {confirming ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Processing...</span>
+                        </div>
+                      ) : "Confirm Your Loan"}
+                    </Button>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6"
+                  >
+                    <div className="flex items-center mb-2">
+                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                      </div>
+                      <span className="text-blue-800 font-medium">Disbursement in Process</span>
+                    </div>
+                    <p className="text-blue-600 text-sm">Your loan amount will be credited to your account shortly. You will receive a notification once the disbursement is complete.</p>
+                  </motion.div>
+                )}
               </motion.div>
             ) : documentStatus?.documentStatus === 'REJECTED' ? (
               <motion.div

@@ -5,8 +5,13 @@ import { Card } from "@/components/ui/card";
 import Link from 'next/link';
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useRouter } from 'next/navigation';
 
 const LoanProcess = () => {
+  const router = useRouter();
+  const form = () => {
+    router.push('/form');
+  };
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 pb-8">
       {/* Subtle background patterns */}
@@ -225,14 +230,15 @@ const LoanProcess = () => {
             transition={{ delay: 0.6, duration: 0.5 }}
             className="mt-8"
           >
-            <Button className="w-full h-14 bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-800 hover:to-blue-600 text-lg font-medium rounded-xl shadow-lg relative overflow-hidden group">
+            <Button className="w-full h-14 bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-800 hover:to-blue-600 text-lg font-medium rounded-xl shadow-lg relative overflow-hidden group"
+            onClick={form}>
               <div className="absolute inset-0 w-full h-full bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-              <Link href="/loan-detail" className="text-white font-medium w-full h-full flex items-center justify-center">
+              
                 Next
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
-              </Link>
+              
             </Button>
           </motion.div>
 

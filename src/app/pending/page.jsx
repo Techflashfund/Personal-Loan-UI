@@ -66,7 +66,7 @@ const ReturningUserDashboard = () => {
         
         // Check if there are any missed EMIs
         // This is an example - you'll need to adapt this to your actual data structure
-        const missedEmis = data.loans[0].message.order.payments.filter(payment => 
+        const missedEmis = data.loans[0].response.message.order.payments.filter(payment => 
           payment.type === "POST_FULFILLMENT" && 
           payment.status === "NOT-PAID" && 
           new Date(payment.time.range.end) < new Date()
@@ -91,7 +91,7 @@ const ReturningUserDashboard = () => {
     }
     
     const loan = apiData.loans[0];
-    const orderData = loan.message.order;
+    const orderData = loan.response.message.order;
     
     // Extract loan details from the API response
     const loanInfo = orderData.items[0].tags.find(tag => 
@@ -242,24 +242,20 @@ const ReturningUserDashboard = () => {
   // Modified loading state to indicate we're waiting for userId when that's the case
   if (!userId) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-700">Loading user data...</p>
-        </div>
-      </div>
+      <div className="loader">
+      <div className="waves"></div>
+      <p className="text-slate-700">Loading user data...</p>
+  </div>
     );
   }
   
   // Regular loading state (after userId is available)
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-700">Loading your loan details...</p>
-        </div>
-      </div>
+      <div className="loader">
+    <div className="waves"></div>
+    <p className="text-slate-700">Loading user data...</p>
+</div>
     );
   }
   
