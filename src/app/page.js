@@ -4,9 +4,17 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
+import { useRouter } from 'next/navigation';
 import Link from 'next/link'
 
 const Home = () => {
+  const router=useRouter()
+  const signin=()=>{
+    router.push('/signin')
+  }
+  const signup=()=>{
+    router.push('/signup')
+  }
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-blue-50">
       {/* Header Logo */}
@@ -132,16 +140,18 @@ const Home = () => {
           transition={{ delay: 0.8, duration: 0.6 }}
           className="space-y-4"
         >
-          <Button className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-lg font-medium rounded-xl shadow-lg">
-          <Link href="/signup" className="text-white font-medium hover:text-blue-700">
+          <Button className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-lg font-medium rounded-xl shadow-lg"
+          onClick={signup}>
+          
           Get Started
-                  </Link>
+                  
            
           </Button>
-          <Button variant="outline" className="w-full h-14 text-lg font-medium border-2 border-blue-100 text-blue-700 hover:bg-blue-50 rounded-xl">
-          <Link href="/signin" className="text-blue-600 font-medium hover:text-blue-700">
+          <Button variant="outline" className="w-full h-14 text-lg font-medium border-2 border-blue-100 text-blue-700 hover:bg-blue-50 rounded-xl"
+          onClick={signin}>
+         
           Login
-                  </Link>
+                
           </Button>
         </motion.div>
 

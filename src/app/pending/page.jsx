@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import useAuthStore from '@/store/user';
+import axios from 'axios';
 import Link from 'next/link';
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -12,6 +13,8 @@ import { motion } from "framer-motion";
 const ReturningUserDashboard = () => {
   const router = useRouter();
   const userId = useAuthStore((state) => state.userId);
+  const token = useAuthStore((state) => state.token)
+  const setTransactionId = useAuthStore((state) => state.setTransactionId)
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -203,7 +206,14 @@ const ReturningUserDashboard = () => {
         }
       }
     )
-    router.push('/offer')
+
+    if (searchResponse.data?.context?.transaction_id) {
+      console.log('Transaction ID:', searchResponse.data.context.transaction_id);
+      
+      setTransactionId(searchResponse.data.context.transaction_id)
+      router.push('/offer')
+    }
+    
   }
   
   const handleMissedEmi = async () => {
