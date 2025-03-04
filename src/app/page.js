@@ -162,8 +162,14 @@ const Home = () => {
           transition={{ delay: 1, duration: 0.6 }}
           className="text-center pt-12 pb-8"
         >
-          <p className="text-sm text-slate-600">
-            Powered by <span className="font-semibold text-blue-600">ONDC</span>
+          <p className="text-sm text-slate-600 flex items-center justify-center">
+            Powered by <Image 
+            src="/ondc-network-vertical.png"
+            alt="FlashFund logo"
+            width={100}  // Increased from 140
+            height={60} // Increased from 85
+            className="w-35"  // Increased from w-36
+          />
           </p>
           <p className="text-xs text-slate-500 mt-1">
             Open Network for Digital Commerce

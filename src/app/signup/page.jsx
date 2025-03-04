@@ -533,9 +533,15 @@ export default function SignupPage() {
             className="text-center mt-10"
           >
             <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm">
-              <p className="text-sm text-slate-600">
-                Powered by <span className="font-semibold text-blue-600">ONDC</span>
-              </p>
+              <p className="text-sm text-slate-600 flex items-center justify-center">
+                          Powered by <Image 
+                          src="/ondc-network-vertical.png"
+                          alt="FlashFund logo"
+                          width={100}  // Increased from 140
+                          height={60} // Increased from 85
+                          className="w-35"  // Increased from w-36
+                        />
+                        </p>
             </div>
             <p className="text-xs text-slate-500 mt-2">
               Open Network for Digital Commerce

@@ -18,6 +18,7 @@ const LoanOffers = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loanAmounts, setLoanAmounts] = useState({});
+  const [emiAmounts, setEmiAmounts] = useState({}); // New state for EMI calculations
   const [sortType, setSortType] = useState(null);
   const [initialLoadingComplete, setInitialLoadingComplete] = useState(false);
   const [offersLoaded, setOffersLoaded] = useState(false);
@@ -45,11 +46,22 @@ const LoanOffers = () => {
 
       const data = await response.json();
       setOffers(data);
+      
+      // Initialize loan and EMI amounts
       const initialAmounts = {};
+      const initialEmiAmounts = {};
+      
       data.forEach(offer => {
-        initialAmounts[offer.lenderId] = offer.loanAmount / 2;
+        const initialLoanAmount = offer.loanAmount / 2;
+        initialAmounts[offer.lenderId] = initialLoanAmount;
+        
+        // Calculate initial EMI based on the initial loan amount
+        const calculatedEmi = calculateEMI(initialLoanAmount, offer.interestRate, offer.term);
+        initialEmiAmounts[offer.lenderId] = calculatedEmi;
       });
+      
       setLoanAmounts(initialAmounts);
+      setEmiAmounts(initialEmiAmounts);
       setOffersLoaded(true);
     } catch (err) {
       setError(err.message);
@@ -59,6 +71,20 @@ const LoanOffers = () => {
       setIsLoading(false);
     }
   }, [transactionId]);
+
+  // Function to calculate EMI
+  const calculateEMI = (principal, interestRate, termInMonths) => {
+    // Convert annual interest rate to monthly and decimal form
+    const monthlyInterestRate = (parseFloat(interestRate) / 100) / 12;
+    const termInMonthsNum = parseInt(termInMonths);
+    
+    // Calculate EMI using the formula: P * r * (1+r)^n / ((1+r)^n - 1)
+    const emi = 
+      (principal * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, termInMonthsNum)) / 
+      (Math.pow(1 + monthlyInterestRate, termInMonthsNum) - 1);
+    
+    return Math.round(emi);
+  };
 
   // Initial loading effect
   useEffect(() => {
@@ -85,10 +111,23 @@ const LoanOffers = () => {
   }, [error, fetchAttempts, fetchOffers, initialLoadingComplete]);
 
   const handleSliderChange = (value, lenderId) => {
+    const selectedOffer = offers.find(offer => offer.lenderId === lenderId);
+    const newLoanAmount = value[0];
+    
+    // Update loan amount
     setLoanAmounts(prev => ({
       ...prev,
-      [lenderId]: value[0]
+      [lenderId]: newLoanAmount
     }));
+    
+    // Calculate and update EMI based on the new loan amount
+    if (selectedOffer) {
+      const newEmi = calculateEMI(newLoanAmount, selectedOffer.interestRate, selectedOffer.term);
+      setEmiAmounts(prev => ({
+        ...prev,
+        [lenderId]: newEmi
+      }));
+    }
   };
 
   const handleSort = (type) => {
@@ -262,7 +301,7 @@ const LoanOffers = () => {
                           <h3 className="font-semibold">{offer.lenderName}</h3>
                         </div>
                         <span className="text-sm bg-white/20 px-2 py-1 rounded">
-                          {offer.interestRate}interest
+                          {offer.interestRate}% interest
                         </span>
                       </div>
                       
@@ -282,7 +321,7 @@ const LoanOffers = () => {
                     <div className="w-full p-4 space-y-3">
                       <div className="space-y-2">
                         <Slider
-                          defaultValue={[loanAmounts[offer.lenderId]]}
+                          defaultValue={[loanAmounts[offer.lenderId] || offer.loanAmount / 2]}
                           max={offer.loanAmount}
                           min={offer.loanAmount * 0.2}
                           step={1000}
@@ -290,18 +329,18 @@ const LoanOffers = () => {
                           onValueChange={(value) => handleSliderChange(value, offer.lenderId)}
                         />
                         <p className="text-center font-bold">
-                          ₹{loanAmounts[offer.lenderId]?.toLocaleString()}
+                          ₹{loanAmounts[offer.lenderId]?.toLocaleString() || (offer.loanAmount / 2).toLocaleString()}
                         </p>
                       </div>
 
                       <div className="text-sm space-y-1">
                         <div className="flex justify-between">
                           <span>Term:</span>
-                          <span>{offer.term} </span>
+                          <span>{offer.term} months</span>
                         </div>
                         <div className="flex justify-between">
                           <span>EMI:</span>
-                          <span>₹{offer.installmentAmount}/mo</span>
+                          <span>₹{emiAmounts[offer.lenderId]?.toLocaleString() || offer.installmentAmount.toLocaleString()}/mo</span>
                         </div>
                       </div>
 
@@ -330,9 +369,15 @@ const LoanOffers = () => {
 
       {/* ONDC Footer */}
       <div className="w-full bg-white py-4 mt-auto border-t">
-        <div className="text-center text-sm text-gray-600">
-          Powered by <span className="text-blue-500 font-bold">ONDC</span>
-        </div>
+        <p className="text-sm text-slate-600 flex items-center justify-center">
+                    Powered by <Image 
+                    src="/ondc-network-vertical.png"
+                    alt="FlashFund logo"
+                    width={100}
+                    height={60}
+                    className="w-35"
+                  />
+                  </p>
       </div>
 
       <style jsx>{`
