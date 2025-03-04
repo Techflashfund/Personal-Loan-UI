@@ -249,7 +249,7 @@ const LoanProcess = () => {
             transition={{ delay: 0.7, duration: 0.6 }}
             className="text-center pt-10"
           >
-            <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm">
+            <div className="inline-flex items-center px-4 py-2 bg-transparent backdrop-blur-sm rounded-full shadow-sm">
               <p className="text-sm text-slate-600 flex items-center justify-center">
                           Powered by <Image 
                           src="/ondc-network-vertical.png"
