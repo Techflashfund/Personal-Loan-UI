@@ -66,7 +66,7 @@ export default function DisbursementPage() {
       
       console.log('Disbursement status response:', response.data);
       
-      if (response.data?.message === "Disbursed loan found" && response.data?.loan) {
+      if (response.data?.message === "Done" && response.data?.loan) {
         setDisbursementStatus('COMPLETED')
         setLoanDetails(response.data.loan)
         setLoading(false)

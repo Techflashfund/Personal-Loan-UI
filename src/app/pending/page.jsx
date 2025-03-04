@@ -171,6 +171,8 @@ const ReturningUserDashboard = () => {
         if (!loanStatusResponse.ok) {
           throw new Error(`Error fetching loan status: ${loanStatusResponse.status}`);
         }
+        console.log('loansssssssss',loanStatusResponse);
+        
         
         const loanData = await loanStatusResponse.json();
         
