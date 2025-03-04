@@ -1,56 +1,116 @@
 'use client'
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import useAuthStore from '@/store/user';
 
 const Foreclosure = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState(null);
+  const [paymentDetails, setPaymentDetails] = useState(null);
+  const [error, setError] = useState(null);
+  const [postPaymentLoading, setPostPaymentLoading] = useState(false);
 
-  // Hardcoded foreclosure data
-  const foreclosureData = {
-    loanAmount: 50000,
-    paidAmount: 15000,
-    interestPaid: 2800,
-    remainingPrincipal: 35000,
-    foreclosureFee: 1750,
-    totalDue: 36750,
-    transactionId: "TXN123456789",
-    loanStartDate: "10 Nov, 2024",
-    completedEMIs: 3,
-    totalEMIs: 12
-  };
+  // Get foreclosure transaction ID from the store
+  const foreclosureTransactionId = useAuthStore((state) => state.foreclosureTransactionId);
 
-  const handleConfirmForeclosure = async () => {
-    try {
-      setProcessing(true);
+  // Check for payment status on component mount or when searchParams change
+  useEffect(() => {
+    const paymentStatus = searchParams.get('status');
+    
+    if (paymentStatus === 'success') {
+      setPostPaymentLoading(true);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Process successful payment
-      setSuccess(true);
-      
-      // Redirect after successful payment (with a delay to show success state)
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 2000);
-      
-    } catch (err) {
-      console.error("Failed to process foreclosure payment:", err);
-      setProcessing(false);
+      // Start a timer to redirect to /pending after 7 seconds
+      const timer = setTimeout(() => {
+        router.push('/pending');
+      }, 7000);
+
+      // Cleanup the timer if component unmounts
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, router]);
+
+  // Fetch payment URL and details from the API
+  useEffect(() => {
+    if (!foreclosureTransactionId) {
+      setError("No foreclosure transaction ID found. Please try again.");
+      return;
+    }
+
+    const fetchPaymentUrl = async () => {
+      try {
+        setProcessing(true);
+        const response = await fetch(
+          `https://pl.pr.flashfund.in/payment-url/${foreclosureTransactionId}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch payment URL: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setPaymentUrl(data.paymentUrl);
+        setPaymentDetails(data.paymentDetails);
+      } catch (err) {
+        console.error("Error fetching payment URL:", err);
+        setError(err.message);
+      } finally {
+        setProcessing(false);
+      }
+    };
+
+    fetchPaymentUrl();
+  }, [foreclosureTransactionId]);
+
+  // Handle opening payment URL in a new tab
+  const handleProceedToPayment = () => {
+    if (paymentUrl) {
+      window.open(paymentUrl, '_blank');
+    } else {
+      setError("Payment URL is not available. Please try again.");
     }
   };
 
+  // Handle back to dashboard
   const handleBackToDashboard = () => {
     router.push('/dashboard');
   };
 
+  // Post-payment loading screen
+  if (postPaymentLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full px-5"
+        >
+          <Card className="p-8 rounded-xl shadow-lg border-0 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="animate-spin h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Payment Confirmed</h2>
+            <p className="text-slate-600 mb-6">Finalizing your loan foreclosure...</p>
+            <p className="text-sm text-slate-500">Please wait while we process your request</p>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Success state when payment is completed
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center">
@@ -156,61 +216,31 @@ const Foreclosure = () => {
             <Card className="p-5 rounded-xl shadow-md border-0 bg-white/95 overflow-hidden">
               <h3 className="font-semibold text-slate-700 text-lg mb-4">Foreclosure Details</h3>
               
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">Original Loan Amount</span>
-                  <span className="font-semibold text-slate-800">₹{foreclosureData.loanAmount.toLocaleString()}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">Amount Paid Till Date</span>
-                  <span className="font-semibold text-slate-800">₹{foreclosureData.paidAmount.toLocaleString()}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">Interest Paid</span>
-                  <span className="font-semibold text-slate-800">₹{foreclosureData.interestPaid.toLocaleString()}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">EMIs Completed</span>
-                  <span className="font-semibold text-slate-800">{foreclosureData.completedEMIs} of {foreclosureData.totalEMIs}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">Loan Start Date</span>
-                  <span className="font-semibold text-slate-800">{foreclosureData.loanStartDate}</span>
-                </div>
-                
-                <div className="border-t border-slate-200 my-3 pt-3"></div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">Remaining Principal</span>
-                  <span className="font-semibold text-slate-800">₹{foreclosureData.remainingPrincipal.toLocaleString()}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">Foreclosure Fee</span>
-                  <span className="font-semibold text-slate-800">₹{foreclosureData.foreclosureFee.toLocaleString()}</span>
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium text-slate-700">Total Foreclosure Amount</p>
-                    <p className="text-xs text-slate-500">Pay this amount to close your loan</p>
+              {paymentDetails ? (
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-500">Total Amount Due</span>
+                    <span className="font-semibold text-slate-800">₹{paymentDetails.amount}</span>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-blue-700 text-xl">₹{foreclosureData.totalDue.toLocaleString()}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-500">Currency</span>
+                    <span className="font-semibold text-slate-800">{paymentDetails.currency}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-500">Status</span>
+                    <span className="font-semibold text-slate-800">{paymentDetails.status}</span>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex justify-center items-center h-20">
+                  <span className="text-slate-500">Loading payment details...</span>
+                </div>
+              )}
               
               <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl h-12"
-                onClick={handleConfirmForeclosure}
-                disabled={processing}
+                onClick={handleProceedToPayment}
+                disabled={!paymentUrl || processing}
               >
                 {processing ? (
                   <span className="flex items-center">
@@ -226,85 +256,26 @@ const Foreclosure = () => {
               </Button>
             </Card>
           </motion.div>
-          
-          {/* Benefits of Foreclosure */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="mb-6"
-          >
-            <Card className="p-5 rounded-xl shadow-md border-0 bg-gradient-to-r from-emerald-50 to-blue-50 overflow-hidden">
-              <h3 className="font-semibold text-slate-700 text-lg mb-3">Benefits of Foreclosure</h3>
-              
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-700">Save on Interest</p>
-                    <p className="text-xs text-slate-500">Pay only what you owe, save on future interest charges</p>
-                  </div>
-                </li>
-                
-                <li className="flex items-start">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-700">Improves Credit Score</p>
-                    <p className="text-xs text-slate-500">Early loan closure can positively impact your credit history</p>
-                  </div>
-                </li>
-                
-                <li className="flex items-start">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-700">Reduce Financial Burden</p>
-                    <p className="text-xs text-slate-500">Free yourself from monthly EMI payments</p>
-                  </div>
-                </li>
-              </ul>
-            </Card>
-          </motion.div>
-          
-          {/* Disclaimer */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="mb-8"
-          >
-            <div className="bg-white/70 backdrop-blur-sm rounded-lg p-4 text-xs text-slate-500 italic text-center">
-              The foreclosure process is irreversible once completed. For assistance, contact customer support.
-            </div>
-          </motion.div>
-          
-          {/* ONDC Attribution */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
-            className="text-center pt-4"
-          >
-            <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm">
-              <p className="text-sm text-slate-600">
-                Powered by <span className="font-semibold text-blue-600">ONDC</span>
-              </p>
-            </div>
-            <p className="text-xs text-slate-500 mt-2">
-              Open Network for Digital Commerce
-            </p>
-          </motion.div>
+
+          {/* Error Display */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-6"
+            >
+              <Alert className="bg-red-50 border-red-200 text-red-800">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
+                </svg>
+                <AlertTitle className="ml-3 text-red-800 font-medium text-sm">Error</AlertTitle>
+                <AlertDescription className="ml-3 text-red-700 text-xs">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>

@@ -7,7 +7,8 @@ const useAuthStore = create(
       token: null,
       userId: null,
       transactionId: null,
-      providerId:null,
+      foreclosureTransactionId: null, // Added for foreclosure transaction
+      providerId: null,
       isAuthenticated: false,
       
       setAuth: (token, userId) => set({
@@ -15,10 +16,15 @@ const useAuthStore = create(
         userId,
         isAuthenticated: true,
       }),
-      
+
       setTransactionId: (transactionId) => set({
         transactionId,
       }),
+
+      setForeclosureTransactionId: (foreclosureTransactionId) => set({
+        foreclosureTransactionId, // Set foreclosure transaction ID
+      }),
+
       setProviderId: (providerId) => set({
         providerId,
       }),
@@ -27,6 +33,7 @@ const useAuthStore = create(
         token: null,
         userId: null,
         transactionId: null,
+        foreclosureTransactionId: null, // Clear foreclosure transaction
         providerId: null,
         isAuthenticated: false,
       }),
