@@ -301,7 +301,7 @@ const LoanOffers = () => {
                           <h3 className="font-semibold">{offer.lenderName}</h3>
                         </div>
                         <span className="text-sm bg-white/20 px-2 py-1 rounded">
-                          {offer.interestRate}% interest
+                          {offer.interestRate}interest
                         </span>
                       </div>
                       
@@ -311,7 +311,7 @@ const LoanOffers = () => {
                       </div>
                       
                       <div className="text-sm text-center">
-                        <p className="opacity-80">Tap to see more details</p>
+                        <p className="opacity-80"><span className='text-xl underline'>Tap</span> to see more details</p>
                       </div>
                     </div>
                   </div>
@@ -336,7 +336,7 @@ const LoanOffers = () => {
                       <div className="text-sm space-y-1">
                         <div className="flex justify-between">
                           <span>Term:</span>
-                          <span>{offer.term} months</span>
+                          <span>{offer.term} </span>
                         </div>
                         <div className="flex justify-between">
                           <span>EMI:</span>

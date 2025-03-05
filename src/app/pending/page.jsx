@@ -382,6 +382,16 @@ const ReturningUserDashboard = () => {
                     )}
                   </motion.div>
                 )}
+
+                {/* Apply Loan Button when Loan is Closed */}
+                
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl h-12 mt-4"
+                    onClick={() => router.push('/main')}
+                  >
+                    Apply for a New Loan
+                  </Button>
+                
               </Card>
             </motion.div>
           ))}
