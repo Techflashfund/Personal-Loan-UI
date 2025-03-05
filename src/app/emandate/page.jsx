@@ -105,7 +105,7 @@ export default function EMandatePage() {
   }
 
   const redirectToNextStep = () => {
-    window.location.href = '/dashboard';
+    window.location.href = '/agreement';
   }
 
   const redirectToForm = () => {
@@ -408,7 +408,7 @@ export default function EMandatePage() {
                   className="w-full bg-white text-green-600 hover:bg-green-50 font-semibold py-5 h-auto rounded-xl shadow-lg"
                   onClick={redirectToNextStep}
                 >
-                  Continue to Dashboard
+                  Sign Agreement
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </motion.div>
