@@ -9,6 +9,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useRouter } from 'next/navigation'
+import { authService } from '@/services/authservices'
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
@@ -89,32 +90,19 @@ export default function ForgotPasswordPage() {
     
     setLoading(true)
     try {
-      const res = await fetch('https://pl.pr.flashfund.in/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+      await authService.sendOtp(email)
+      toast.success('Success', {
+        description: 'OTP sent successfully to your email'
       })
-
-      if (res.ok) {
-        toast.success('Success', {
-          description: 'OTP sent successfully to your email'
-        })
-        setStep(2)
-      } else {
-        const data = await res.json()
-        setErrors(prev => ({ 
-          ...prev, 
-          server: data.message || 'Failed to send OTP. Please try again.' 
-        }))
-      }
+      setStep(2)
     } catch (error) {
       setErrors(prev => ({ 
         ...prev, 
-        server: 'Network error. Please check your connection and try again' 
+        server: error.message
       }))
       
       toast.error('Connection Error', {
-        description: 'Unable to connect to the server'
+        description:  error.message
       })
     } finally {
       setLoading(false)

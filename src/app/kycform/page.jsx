@@ -8,8 +8,10 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CheckCircle, XCircle, Clock, RefreshCw, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function KYCPage() {
+  const router = useRouter();
   const transactionId = useAuthStore((state) => state.transactionId);
   const [formUrl, setFormUrl] = useState('')
   const [formId, setFormId] = useState('')
@@ -100,7 +102,7 @@ export default function KYCPage() {
   }
 
   const handleBack = () => {
-    window.history.back();
+    router.push('/main')
   }
 
   const redirectToEMandate = () => {
@@ -467,12 +469,9 @@ export default function KYCPage() {
               >
                 <Button 
                   className="w-full bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 h-auto rounded-xl shadow-md flex items-center justify-center"
-                  onClick={() => {
-                    setLoading(true);
-                    fetchFormUrl();
-                  }}
+                  onClick={handleBack}
                 >
-                  <RefreshCw className="w-4 h-4 mr-2" />
+                  
                   Try Again
                 </Button>
               </motion.div>

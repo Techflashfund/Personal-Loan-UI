@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import useAuthStore from '@/store/user'
 import { useRouter } from 'next/navigation'
+import { formService } from '@/services/formservices'
 import Image from 'next/image'
 import {
   Select,
@@ -52,6 +53,18 @@ export default function UserDetailsForm() {
     bureauConsent: false,
     lastUpdated: new Date()
   })
+  const isOver21 = (dob) => {
+    const today = new Date()
+    const birthDate = new Date(dob)
+    const age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    
+    return age >= 21
+  }
 
   const validateForm = (data, currentStep) => {
     let newErrors = {}
@@ -60,7 +73,11 @@ export default function UserDetailsForm() {
     if (currentStep === 1) {
       if (!data.firstName.trim()) newErrors.firstName = "First name is required"
       if (!data.lastName.trim()) newErrors.lastName = "Last name is required"
-      if (!data.dob) newErrors.dob = "Date of birth is required"
+      if (!data.dob) {
+        newErrors.dob = "Date of birth is required"
+      } else if (!isOver21(data.dob)) {
+        newErrors.dob = "You must be at least 21 years old"
+      }
       if (!data.gender) newErrors.gender = "Gender is required"
       if (!data.pan) newErrors.pan = "PAN number is required"
       else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(data.pan)) 
@@ -156,36 +173,24 @@ export default function UserDetailsForm() {
         dob: new Date(formData.dob).toISOString()
       }
 
-      const response = await axios.post(
-        `https://pl.pr.flashfund.in/form/submit/${userId}`,
-        formattedData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-      const searchResponse = await axios.post(
-        `https://pl.pr.flashfund.in/api/search/one`,
-        { userId },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-
-      if (searchResponse.data?.context?.transaction_id) {
-        console.log('Transaction ID:', searchResponse.data.context.transaction_id);
-        
-        setTransactionId(searchResponse.data.context.transaction_id)
+      await formService.submitForm(userId, formattedData, token)
+      const searchResponse = await formService.searchOne(userId, token)
+       console.log('Search Response:', searchResponse);
+       
+       if (searchResponse?.context?.transaction_id) {
+        console.log('Transaction ID:', searchResponse.context.transaction_id)
+        setTransactionId(searchResponse.context.transaction_id)
         router.push('/offer')
+      } else {
+        throw new Error('Transaction ID not found in response')
       }
-      console.log('Success:', response.data)
+      
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Error:', error.message)
+    setErrors(prev => ({
+      ...prev,
+      submit: error.message
+    }))
     } finally {
       setIsLoading(false)
     }
@@ -331,14 +336,14 @@ export default function UserDetailsForm() {
               </div>
 
               <div>
-                <Label htmlFor="pan" className="text-sm font-medium">PAN Number *</Label>
+                <Label htmlFor="pan" className="text-sm font-medium uppercase">PAN Number *</Label>
                 <Input
                   id="pan"
                   name="pan"
                   value={formData.pan}
                   onChange={handleChange}
                   onBlur={() => handleBlur('pan')}
-                  className={`uppercase mt-1 ${touched.pan && errors.pan ? 'border-red-500' : ''}`}
+                  className={` mt-1 ${touched.pan && errors.pan ? 'border-red-500' : ''}`}
                   required
                 />
                 {touched.pan && <ErrorMessage error={errors.pan} />}

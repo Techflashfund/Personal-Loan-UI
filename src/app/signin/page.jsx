@@ -10,124 +10,85 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useRouter } from 'next/navigation'
+import { login } from '@/services/authservices'
+import { validateEmail, validatePassword } from '@/utils/validation'
 
 export default function LoginPage() {
-   const router = useRouter();
-  const [loading, setLoading] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({
     email: '',
     password: '',
     server: ''
-  })
-  const [formTouched, setFormTouched] = useState(false)
-  const setAuth = useAuthStore((state) => state.setAuth)
+  });
+  const [formTouched, setFormTouched] = useState(false);
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   // Reset server error when form inputs change
   useEffect(() => {
     if (formTouched) {
-      setErrors(prev => ({ ...prev, server: '' }))
+      setErrors(prev => ({ ...prev, server: '' }));
     }
-  }, [email, password, formTouched])
-
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!email) return 'Email is required'
-    if (!emailRegex.test(email)) return 'Please enter a valid email address'
-    return ''
-  }
-
-  const validatePassword = (password) => {
-    if (!password) return 'Password is required'
-    if (password.length < 6) return 'Password must be at least 6 characters'
-    return ''
-  }
+  }, [email, password, formTouched]);
 
   const validateForm = () => {
-    const emailError = validateEmail(email)
-    const passwordError = validatePassword(password)
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
     
     setErrors({
       email: emailError,
       password: passwordError,
       server: ''
-    })
+    });
 
-    return !emailError && !passwordError
-  }
+    return !emailError && !passwordError;
+  };
 
   const handleInputChange = (field, value) => {
-    if (!formTouched) setFormTouched(true)
+    if (!formTouched) setFormTouched(true);
     
     if (field === 'email') {
-      setEmail(value)
-      setErrors(prev => ({ ...prev, email: '' }))
+      setEmail(value);
+      setErrors(prev => ({ ...prev, email: '' }));
     } else if (field === 'password') {
-      setPassword(value)
-      setErrors(prev => ({ ...prev, password: '' }))
+      setPassword(value);
+      setErrors(prev => ({ ...prev, password: '' }));
     }
-  }
-
-  const handleLogin = async (e) => {
-    e.preventDefault()
-    
-    // Validate form before submission
-    if (!validateForm()) return
-    
-    setLoading(true)
-
-    try {
-      const res = await fetch('https://pl.pr.flashfund.in/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await res.json()
-      
-      if (res.ok) {
-        setAuth(data.token, data.userId)
-        toast.success('Success', {
-          description: 'Logged in successfully'
-        })
-        router.push('/pending');
-        
-      } else {
-        // Handle different error types based on status code or response
-        if (res.status === 401) {
-          setErrors(prev => ({ ...prev, server: 'Invalid email or password' }))
-        } else if (res.status === 429) {
-          setErrors(prev => ({ ...prev, server: 'Too many attempts. Please try again later' }))
-        } else {
-          setErrors(prev => ({ ...prev, server: data.message || 'Login failed. Please try again' }))
-        }
-      }
-    } catch (error) {
-      // Handle network errors
-      setErrors(prev => ({ 
-        ...prev, 
-        server: 'Network error. Please check your connection and try again'
-      }))
-      
-      toast.error('Connection Error', {
-        description: 'Unable to connect to the server'
-      })
-    } finally {
-      
-      setLoading(false)
-    }
-  }
+  };
 
   const handleBlur = (field) => {
     if (field === 'email') {
-      setErrors(prev => ({ ...prev, email: validateEmail(email) }))
+      setErrors(prev => ({ ...prev, email: validateEmail(email) }));
     } else if (field === 'password') {
-      setErrors(prev => ({ ...prev, password: validatePassword(password) }))
+      setErrors(prev => ({ ...prev, password: validatePassword(password) }));
     }
-  }
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    setLoading(true);
+
+    try {
+      const data = await login(email, password);
+      setAuth(data.token, data.userId);
+      toast.success('Success', {
+        description: 'Logged in successfully',
+      });
+      router.push('/pending');
+    } catch (error) {
+      setErrors(prev => ({ ...prev, server: error.message }));
+      toast.error('Error', {
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 relative overflow-hidden">
@@ -139,7 +100,7 @@ export default function LoginPage() {
 
       <div className="relative z-10 max-w-screen-xl mx-auto px-4">
         {/* Header with shadow and glass effect */}
-        <div className=" pt-6 pb-4 px-6">
+        <div className="pt-6 pb-4 px-6">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -307,14 +268,15 @@ export default function LoginPage() {
           >
             <div className="inline-flex items-center px-4 py-2 bg-transparent backdrop-blur-sm rounded-full shadow-sm">
               <p className="text-sm text-slate-600 flex items-center justify-center">
-                          Powered by <Image 
-                          src="/ondc-network-vertical.png"
-                          alt="FlashFund logo"
-                          width={100}  // Increased from 140
-                          height={60} // Increased from 85
-                          className="w-35"  // Increased from w-36
-                        />
-                        </p>
+                Powered by{' '}
+                <Image 
+                  src="/ondc-network-vertical.png"
+                  alt="FlashFund logo"
+                  width={100}
+                  height={60}
+                  className="w-35"
+                />
+              </p>
             </div>
             <p className="text-xs text-slate-500 mt-2">
               Open Network for Digital Commerce
@@ -323,5 +285,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
