@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -10,33 +10,14 @@ import useAuthStore from '@/store/user';
 
 const Foreclosure = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [error, setError] = useState(null);
-  const [postPaymentLoading, setPostPaymentLoading] = useState(false);
 
   // Get foreclosure transaction ID from the store
   const foreclosureTransactionId = useAuthStore((state) => state.foreclosureTransactionId);
-
-  // Check for payment status on component mount or when searchParams change
-  useEffect(() => {
-    const paymentStatus = searchParams.get('status');
-    
-    if (paymentStatus === 'success') {
-      setPostPaymentLoading(true);
-      
-      // Start a timer to redirect to /pending after 7 seconds
-      const timer = setTimeout(() => {
-        router.push('/pending');
-      }, 7000);
-
-      // Cleanup the timer if component unmounts
-      return () => clearTimeout(timer);
-    }
-  }, [searchParams, router]);
 
   // Fetch payment URL and details from the API
   useEffect(() => {
@@ -84,33 +65,6 @@ const Foreclosure = () => {
     router.push('/dashboard');
   };
 
-  // Post-payment loading screen
-  if (postPaymentLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-md w-full px-5"
-        >
-          <Card className="p-8 rounded-xl shadow-lg border-0 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="animate-spin h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Payment Confirmed</h2>
-            <p className="text-slate-600 mb-6">Finalizing your loan foreclosure...</p>
-            <p className="text-sm text-slate-500">Please wait while we process your request</p>
-          </Card>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Success state when payment is completed
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center">
