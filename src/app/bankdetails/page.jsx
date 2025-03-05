@@ -26,8 +26,6 @@ const BankAccountForm = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [formSubmitted, setFormSubmitted] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [totalSteps] = useState(3);
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,7 +33,6 @@ const BankAccountForm = () => {
       ...prev,
       [name]: value
     }));
-    
     setErrorMessage("");
     setSuccessMessage("");
   };
@@ -45,7 +42,6 @@ const BankAccountForm = () => {
       ...prev,
       accountType: value
     }));
-    
     setErrorMessage("");
     setSuccessMessage("");
   };
@@ -107,21 +103,6 @@ const BankAccountForm = () => {
     const fieldsFilled = Object.values(formData).filter(Boolean).length;
     const totalFields = Object.keys(formData).length;
     return Math.min(100, Math.round((fieldsFilled / totalFields) * 100));
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-  
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    show: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 300 } }
   };
 
   return (
@@ -242,11 +223,11 @@ const BankAccountForm = () => {
                     <motion.form 
                       onSubmit={handleSubmit} 
                       className="space-y-5"
-                      variants={containerVariants}
-                      initial="hidden"
-                      animate="show"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
                     >
-                      <motion.div variants={itemVariants} className="space-y-2">
+                      <motion.div className="space-y-2">
                         <Label htmlFor="accountHolderName" className="text-sm font-medium flex items-center">
                           <User className="w-4 h-4 mr-1.5 text-blue-500" />
                           Account Holder Name
@@ -262,7 +243,7 @@ const BankAccountForm = () => {
                         />
                       </motion.div>
                       
-                      <motion.div variants={itemVariants} className="space-y-2">
+                      <motion.div className="space-y-2">
                         <Label className="text-sm font-medium flex items-center">
                           <BanknoteIcon className="w-4 h-4 mr-1.5 text-blue-500" />
                           Account Type
@@ -322,7 +303,7 @@ const BankAccountForm = () => {
                         </div>
                       </motion.div>
                       
-                      <motion.div variants={itemVariants} className="space-y-2">
+                      <motion.div className="space-y-2">
                         <Label htmlFor="accountNumber" className="text-sm font-medium flex items-center">
                           <CreditCard className="w-4 h-4 mr-1.5 text-blue-500" />
                           Account Number
@@ -346,7 +327,7 @@ const BankAccountForm = () => {
                         <p className="text-xs text-gray-500 mt-1">Your data is secured with bank-level encryption</p>
                       </motion.div>
                       
-                      <motion.div variants={itemVariants} className="space-y-2">
+                      <motion.div className="space-y-2">
                         <Label htmlFor="ifscCode" className="text-sm font-medium flex items-center">
                           <BanknoteIcon className="w-4 h-4 mr-1.5 text-blue-500" />
                           IFSC Code
@@ -368,10 +349,7 @@ const BankAccountForm = () => {
                         <p className="text-xs text-gray-500 mt-1">Find your IFSC code on your cheque or bank passbook</p>
                       </motion.div>
                       
-                      <motion.div 
-                        variants={itemVariants}
-                        className="pt-4"
-                      >
+                      <motion.div className="pt-4">
                         <Button 
                           type="submit" 
                           className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg overflow-hidden relative"
@@ -452,7 +430,7 @@ const BankAccountForm = () => {
                         </Button>
                       </motion.div>
                       
-                      <motion.div variants={itemVariants} className="flex items-center justify-center pt-2">
+                      <motion.div className="flex items-center justify-center pt-2">
                         <Lock className="w-3 h-3 mr-1 text-gray-400" />
                         <p className="text-xs text-gray-500">Your information is protected with 256-bit encryption</p>
                       </motion.div>
@@ -463,55 +441,6 @@ const BankAccountForm = () => {
             </CardContent>
           </Card>
         </motion.div>
-        
-        {/* Enhanced floating decorative elements */}
-        <div className="relative z-0">
-          <motion.div
-            className="absolute top-10 right-0 text-4xl opacity-30"
-            animate={{ 
-              y: [0, -15, 0],
-              rotate: [0, 10, 0]
-            }}
-            transition={{ 
-              duration: 4, 
-              repeat: Infinity,
-              repeatType: "reverse" 
-            }}
-          >
-            ⚡
-          </motion.div>
-          
-          <motion.div
-            className="absolute -bottom-16 -left-8 text-4xl opacity-30"
-            animate={{ 
-              y: [0, 15, 0],
-              rotate: [0, -10, 0]
-            }}
-            transition={{ 
-              duration: 5, 
-              repeat: Infinity,
-              repeatType: "reverse"
-            }}
-          >
-            ✨
-          </motion.div>
-          
-          <motion.div
-            className="absolute -bottom-10 right-10 text-4xl opacity-30"
-            animate={{ 
-              scale: [1, 1.1, 1],
-              opacity: [0.3, 0.4, 0.3]
-            }}
-            transition={{ 
-              duration: 4, 
-              repeat: Infinity,
-              repeatType: "reverse",
-              delay: 1
-            }}
-          >
-            💸
-          </motion.div>
-        </div>
       </div>
     </div>
   );
