@@ -19,13 +19,25 @@ export default function EMandatePage() {
   const [error, setError] = useState('')
   const [formOpened, setFormOpened] = useState(false)
   const [step, setStep] = useState(1) // Track current step for better mobile UX
+  const [initialLoading, setInitialLoading] = useState(true) // New state for initial loader
+  const [retryCount, setRetryCount] = useState(0) // Track API retry attempts
+  const [isApiPending, setIsApiPending] = useState(false) // Track if API call is in progress
 
-  // Monitor for transactionId changes
+  // Initial loader effect
   useEffect(() => {
-    if (transactionId) {
+    const timer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 4000); // 4 second loader
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Monitor for transactionId changes - only after initial loading
+  useEffect(() => {
+    if (!initialLoading && transactionId) {
       fetchFormUrl()
     }
-  }, [transactionId])
+  }, [transactionId, initialLoading])
 
   // Start polling when formId is available
   useEffect(() => {
@@ -34,11 +46,30 @@ export default function EMandatePage() {
     }
   }, [formId])
 
+  // Set up auto-retry for 404s
+  useEffect(() => {
+    let retryTimer;
+    
+    if (isApiPending && retryCount > 0) {
+      // Exponential backoff with a base of 2 seconds (2s, 4s, 8s, etc.)
+      // But capped at 15 seconds maximum
+      const backoffTime = Math.min(2000 * Math.pow(1.5, retryCount - 1), 15000);
+      
+      retryTimer = setTimeout(() => {
+        fetchFormUrl();
+      }, backoffTime);
+    }
+    
+    return () => clearTimeout(retryTimer);
+  }, [retryCount, isApiPending]);
+
   const fetchFormUrl = async () => {
     if (!transactionId) {
       setError('Transaction ID not found')
       return
     }
+    
+    setIsApiPending(true);
     
     try {      
       const response = await axios.post('https://pl.pr.flashfund.in/mandate-form', 
@@ -50,6 +81,10 @@ export default function EMandatePage() {
         }
       )
       
+      // Reset retry count on successful response
+      setRetryCount(0);
+      setIsApiPending(false);
+      
       if (response.data?.formUrl && response.data?.formId) {
         setFormUrl(response.data.formUrl)
         setFormId(response.data.formId)
@@ -57,7 +92,18 @@ export default function EMandatePage() {
         setError('Invalid response format')
       }
     } catch (error) {
-      setError('Failed to load eMandate form')
+      // Handle 404 errors specifically
+      if (error.response && error.response.status === 404) {
+        // Increment retry count and keep loading
+        setRetryCount(prev => prev + 1);
+        setIsApiPending(true);
+        // Error will be cleared since we're waiting for the API to be ready
+        setError('');
+      } else {
+        // For other errors, show the error message
+        setError('Failed to load eMandate form');
+        setIsApiPending(false);
+      }
     }
   }
 
@@ -158,6 +204,49 @@ export default function EMandatePage() {
       transition: { duration: 0.8, ease: "easeInOut", delay: 0.2 }
     }
   };
+
+  // Initial loader component
+  if (initialLoading || (isApiPending && retryCount > 0)) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+        <motion.div 
+          className="w-16 h-16 border-4 border-gray-200 border-t-blue-500 rounded-full mb-8"
+          variants={loaderVariants}
+          animate="animate"
+        />
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="text-center px-6"
+        >
+          <h2 className="text-xl font-semibold text-gray-800 mb-3">
+            {initialLoading 
+              ? "Preparing Your eMandate" 
+              : "Waiting for eMandate Service"}
+          </h2>
+          <p className="text-gray-500">
+            {initialLoading 
+              ? "Setting up your secure payment authorization..."
+              : "The service is being initialized. Please wait..."}
+          </p>
+          {retryCount > 0 && (
+            <p className="text-xs text-blue-500 mt-2">
+              Attempt {retryCount}... We'll keep trying automatically
+            </p>
+          )}
+        </motion.div>
+        
+        <motion.div
+          initial={{ width: "0%" }}
+          animate={{ width: initialLoading ? "60%" : `${Math.min(30 + (retryCount * 10), 90)}%` }}
+          transition={{ duration: 3.5, ease: "easeInOut" }}
+          className="h-1 bg-blue-500 fixed bottom-16 left-0 rounded-r-full"
+        />
+      </div>
+    )
+  }
 
   // Render the appropriate step
   const renderContent = () => {

@@ -21,7 +21,7 @@ const TicketsPage = () => {
     const fetchTickets = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:3001/issue_status/check', {
+        const response = await fetch('https://pl.pr.flashfund.in/issue_status/check', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -80,7 +80,7 @@ const TicketsPage = () => {
       
       // In a real implementation, you would call your API:
       /*
-      await fetch(`http://localhost:3001/issue_status/remove`, {
+      await fetch(`https://pl.pr.flashfund.in/issue_status/remove`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

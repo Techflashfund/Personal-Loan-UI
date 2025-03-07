@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BadgeIndian, Wallet, GraduationCap, BanknoteIcon, ArrowUpDown, Loader2 } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { useRouter } from 'next/navigation';
+const {motion} = require('framer-motion');
 
 const LoanOffers = () => {
   const router = useRouter();
@@ -181,33 +182,47 @@ const LoanOffers = () => {
   // Render loading animation
   if (showLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-amber-50 flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex flex-col items-center justify-center">
         <div className="flex flex-col items-center space-y-8">
-          <div className="relative">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex justify-center"
+          >
             <Image 
               src="/FlashfundLogo.png"
               alt="FlashFund logo"
-              width={220}
-              height={140}
-              className="animate-pulse z-10"
+              width={180}
+              height={110}
+              className="w-36"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-amber-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
-          </div>
+          </motion.div>
           
-          <div className="flex flex-col items-center">
-            <div className="text-2xl font-semibold mb-2 text-center text-gray-700">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-col items-center"
+          >
+            <div className="text-2xl font-bold mb-2 text-center text-slate-800">
               Finding the best offers for you
             </div>
             <div className="flex space-x-2 mt-4">
-              <div className="w-3 h-3 rounded-full bg-purple-600 animate-bounce" style={{ animationDelay: '0s' }}></div>
-              <div className="w-3 h-3 rounded-full bg-purple-600 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-3 h-3 rounded-full bg-purple-600 animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+              <div className="w-3 h-3 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '0s' }}></div>
+              <div className="w-3 h-3 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-3 h-3 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '0.4s' }}></div>
             </div>
-          </div>
+          </motion.div>
           
-          <div className="max-w-md text-center text-gray-500 text-sm px-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="max-w-md text-center text-slate-600 text-sm px-4"
+          >
             We're comparing loan options from multiple lenders to find the best rates and terms for your needs.
-          </div>
+          </motion.div>
         </div>
       </div>
     );
