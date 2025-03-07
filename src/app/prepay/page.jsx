@@ -8,7 +8,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import useAuthStore from '@/store/user';
 
-const Foreclosure = () => {
+const Prepayment = () => {
   const router = useRouter();
   const [processing, setProcessing] = useState(false);
   const [urlLoading, setUrlLoading] = useState(true);
@@ -18,13 +18,13 @@ const Foreclosure = () => {
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [error, setError] = useState(null);
 
-  // Get foreclosure transaction ID from the store
-  const foreclosureTransactionId = useAuthStore((state) => state.foreclosureTransactionId);
+  // Get prepayment transaction ID from the store
+  const prepaymentTransactionId = useAuthStore((state) => state.prepaymentTransactionId);
 
   // Fetch payment URL and details from the API
   useEffect(() => {
-    if (!foreclosureTransactionId) {
-      setError("No foreclosure transaction ID found. Please try again.");
+    if (!prepaymentTransactionId) {
+      setError("No prepayment transaction ID found. Please try again.");
       setUrlLoading(false);
       return;
     }
@@ -34,7 +34,7 @@ const Foreclosure = () => {
         setUrlLoading(true);
         setProcessing(true);
         const response = await fetch(
-          `https://pl.pr.flashfund.in/payment-url/${foreclosureTransactionId}?type=${'foreclosure'}`
+          `https://pl.pr.flashfund.in/payment-url/${prepaymentTransactionId}?type=${'prepayment'}`
         );
 
         if (!response.ok) {
@@ -54,7 +54,7 @@ const Foreclosure = () => {
     };
 
     fetchPaymentUrl();
-  }, [foreclosureTransactionId]);
+  }, [prepaymentTransactionId]);
 
   // Handle opening payment URL in a new tab
   const handleProceedToPayment = () => {
@@ -119,7 +119,7 @@ const Foreclosure = () => {
               </svg>
             </div>
             <h2 className="text-xl font-bold text-slate-800 mb-2">Payment Successful!</h2>
-            <p className="text-slate-600 mb-6">Your loan has been successfully foreclosed.</p>
+            <p className="text-slate-600 mb-6">Your loan prepayment has been successfully processed.</p>
             <p className="text-sm text-slate-500 mb-6">Redirecting to dashboard...</p>
           </Card>
         </motion.div>
@@ -165,7 +165,7 @@ const Foreclosure = () => {
         </div>
 
         <div className="max-w-md mx-auto px-5 pt-2">
-          {/* Foreclosure Title */}
+          {/* Prepayment Title */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -174,11 +174,11 @@ const Foreclosure = () => {
           >
             <div className="flex items-center mb-2">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
-                <span className="text-xl">🔓</span>
+                <span className="text-xl">💰</span>
               </div>
-              <h2 className="text-white font-semibold text-xl leading-tight">Loan Foreclosure</h2>
+              <h2 className="text-white font-semibold text-xl leading-tight">Loan Prepayment</h2>
             </div>
-            <p className="text-white/90 text-sm">Close your loan early and save on future interest.</p>
+            <p className="text-white/90 text-sm">Make an additional payment to reduce your principal amount.</p>
           </motion.div>
 
           {/* Important Note Alert */}
@@ -193,12 +193,12 @@ const Foreclosure = () => {
               </svg>
               <AlertTitle className="ml-3 text-amber-800 font-medium text-sm">Important</AlertTitle>
               <AlertDescription className="ml-3 text-amber-700 text-xs">
-                After foreclosure, your loan will be marked as "Closed" and you'll receive a digital closure certificate.
+                Prepayment will reduce your loan principal. Your EMI amount will remain the same, but your loan tenure will be shortened.
               </AlertDescription>
             </Alert>
           </motion.div>
 
-          {/* Foreclosure Details Card */}
+          {/* Prepayment Details Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -206,7 +206,7 @@ const Foreclosure = () => {
             className="mb-6"
           >
             <Card className="p-5 rounded-xl shadow-md border-0 bg-white/95 overflow-hidden">
-              <h3 className="font-semibold text-slate-700 text-lg mb-4">Foreclosure Details</h3>
+              <h3 className="font-semibold text-slate-700 text-lg mb-4">Prepayment Details</h3>
               
               {urlLoading ? (
                 <div className="flex flex-col justify-center items-center h-40 mb-6">
@@ -222,7 +222,7 @@ const Foreclosure = () => {
               ) : paymentDetails ? (
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-500">Total Amount Due</span>
+                    <span className="text-sm text-slate-500">Prepayment Amount</span>
                     <span className="font-semibold text-slate-800">₹{paymentDetails.amount}</span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -285,4 +285,4 @@ const Foreclosure = () => {
   );
 };
 
-export default Foreclosure;
+export default Prepayment;

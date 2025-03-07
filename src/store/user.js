@@ -7,8 +7,10 @@ const useAuthStore = create(
       token: null,
       userId: null,
       transactionId: null,
-      foreclosureTransactionId: null, // Added for foreclosure transaction
+      foreclosureTransactionId: null,
+      prepaymentTransactionId: null, // Added for foreclosure transaction
       providerId: null,
+      igmTransactionId: null, // Added for IGMT transaction
       isAuthenticated: false,
       
       setAuth: (token, userId) => set({
@@ -25,15 +27,25 @@ const useAuthStore = create(
         foreclosureTransactionId, // Set foreclosure transaction ID
       }),
 
+      setprepaymentTransactionId: (prepaymentTransactionId) => set({
+        prepaymentTransactionId, // Set prepayment transaction ID
+      }),
+
       setProviderId: (providerId) => set({
         providerId,
       }),
-      
+
+      setIgmTransactionId: (igmTransactionId) => set({
+        igmTransactionId, // Set IGMT transaction ID
+      }),
+
       clearAuth: () => set({
         token: null,
         userId: null,
         transactionId: null,
-        foreclosureTransactionId: null, // Clear foreclosure transaction
+        foreclosureTransactionId: null, 
+        prepaymentTransactionId: null, // Clear foreclosure transaction
+        igmTransactionId: null, // Clear IGMT transaction ID
         providerId: null,
         isAuthenticated: false,
       }),
