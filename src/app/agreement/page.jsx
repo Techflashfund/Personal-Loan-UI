@@ -189,7 +189,7 @@ export default function LoanAgreementPage() {
       return (
         <motion.div 
           {...fadeIn}
-          className="flex flex-col items-center justify-center text-center px-6 py-10 bg-white rounded-xl shadow-sm"
+          className="flex flex-col items-center justify-center text-center px-6 py-10 bg-white rounded-xl shadow-sm max-w-md mx-auto"
         >
           <motion.div
             animate={pulseAnimation}
@@ -211,7 +211,7 @@ export default function LoanAgreementPage() {
           return (
             <motion.div 
               {...fadeIn}
-              className="flex flex-col bg-white rounded-xl shadow-sm overflow-hidden"
+              className="flex flex-col bg-white rounded-xl shadow-sm overflow-hidden max-w-md mx-auto"
             >
               <div className="p-6 border-b border-gray-100">
                 <div className="flex items-center mb-4">
@@ -299,7 +299,7 @@ export default function LoanAgreementPage() {
           return (
             <motion.div 
               {...slideIn}
-              className="flex flex-col bg-white rounded-xl shadow-sm overflow-hidden"
+              className="flex flex-col bg-white rounded-xl shadow-sm overflow-hidden max-w-md mx-auto"
             >
               <div className="p-4 border-b border-gray-100 flex items-center">
                 <Button
@@ -316,7 +316,7 @@ export default function LoanAgreementPage() {
               <div className="relative">
                 <iframe
                   src={formUrl}
-                  className="w-full h-screen max-h-[80vh] border-none"
+                  className="w-full h-screen max-h-[60vh] border-none"
                   title="Loan Agreement Form"
                   sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-top-navigation"
                   referrerPolicy="origin"
@@ -356,7 +356,7 @@ export default function LoanAgreementPage() {
       return (
         <motion.div 
           {...fadeIn}
-          className="flex flex-col items-center justify-center text-center px-6 py-10 bg-white rounded-xl shadow-sm"
+          className="flex flex-col items-center justify-center text-center px-6 py-10 bg-white rounded-xl shadow-sm max-w-md mx-auto"
         >
           <motion.div 
             className="w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full mb-6"
@@ -376,7 +376,7 @@ export default function LoanAgreementPage() {
       return (
         <motion.div
           {...fadeIn}
-          className="relative overflow-hidden rounded-xl"
+          className="relative overflow-hidden rounded-xl max-w-md mx-auto"
         >
           <motion.div
             initial={{ height: 0 }}
@@ -457,7 +457,7 @@ export default function LoanAgreementPage() {
       return (
         <motion.div
           {...fadeIn}
-          className="bg-white p-6 rounded-xl shadow-md"
+          className="bg-white p-6 rounded-xl shadow-md max-w-md mx-auto"
         >
           <div className="flex justify-center mb-5">
             <motion.div
@@ -519,7 +519,7 @@ export default function LoanAgreementPage() {
       return (
         <motion.div
           {...fadeIn}
-          className="bg-white p-6 rounded-xl shadow-md text-center"
+          className="bg-white p-6 rounded-xl shadow-md text-center max-w-md mx-auto"
         >
           <motion.div
             className="w-16 h-16 mx-auto bg-yellow-100 rounded-full flex items-center justify-center mb-4"
@@ -571,10 +571,10 @@ export default function LoanAgreementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center">
       {/* Fixed Header */}
-      <header className="sticky top-0 z-10 bg-white shadow-sm">
-        <div className="px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-white shadow-sm w-full">
+        <div className="px-4 py-3 flex items-center justify-between max-w-md mx-auto">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -604,8 +604,8 @@ export default function LoanAgreementPage() {
       
       {/* Progress indicator */}
       {loading && formUrl && !documentStatus?.documentStatus && (
-        <div className="px-4 py-2 bg-blue-50">
-          <div className="flex items-center">
+        <div className="px-4 py-2 bg-blue-50 w-full">
+          <div className="flex items-center max-w-md mx-auto">
             <div className="flex-1">
               <div className="h-1 bg-gray-200 rounded-full">
                 <motion.div 
@@ -624,12 +624,12 @@ export default function LoanAgreementPage() {
       )}
       
       {/* Main Content */}
-      <div className="px-4 py-6">
+      <div className="px-4 py-6 w-full flex flex-col items-center">
         {error && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg"
+            className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg max-w-md w-full"
           >
             {error}
           </motion.div>
@@ -648,7 +648,7 @@ export default function LoanAgreementPage() {
           transition={{ delay: 1, duration: 0.5 }}
           className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 text-center"
         >
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 max-w-md mx-auto">
             Need help? Call our support at <span className="font-medium">1800-123-4567</span>
           </p>
         </motion.div>

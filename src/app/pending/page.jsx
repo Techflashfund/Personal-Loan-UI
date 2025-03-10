@@ -199,12 +199,14 @@ const ReturningUserDashboard = () => {
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+      if (response.ok) {
+        
+        setprepaymentTransactionId(transactionId);
+        router.push('/prepay');
       }
-      setprepaymentTransactionId(transactionId);
+     
 
-      router.push('/prepay');
+      
     } catch (err) {
       console.error("Failed to process prepayment:", err);
       setError(err.message);

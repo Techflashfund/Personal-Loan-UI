@@ -548,88 +548,91 @@ export default function KYCPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Fixed Header */}
-      <header className="sticky top-0 z-10 bg-white shadow-sm">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Image 
-              src="/FlashfundLogo.png"
-              alt="FlashFund logo"
-              width={80}
-              height={48}
-              className="w-20"
-            />
-          </motion.div>
-          
-          {!loading && kycStatus?.kycStatus !== 'SUCCESS' && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              onClick={handleBack}
-              className="flex items-center justify-center h-9 w-9 rounded-full bg-gray-100 text-gray-600"
+    <div className="min-h-screen bg-gray-50 flex justify-center">
+      {/* Mobile container that will be centered on desktop */}
+      <div className="w-full max-w-md flex flex-col">
+        {/* Fixed Header */}
+        <header className="sticky top-0 z-10 bg-white shadow-sm w-full">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
             >
-              <ArrowLeft className="w-4 h-4" />
-            </motion.button>
-          )}
-        </div>
-      </header>
-      
-      {/* Progress indicator */}
-      {loading && formUrl && !kycStatus?.kycStatus && (
-        <div className="px-4 py-2 bg-blue-50">
-          <div className="flex items-center">
-            <div className="flex-1">
-              <div className="h-1 bg-gray-200 rounded-full">
-                <motion.div 
-                  className="h-1 bg-blue-500 rounded-full"
-                  initial={{ width: "0%" }}
-                  animate={{ width: formOpened ? "50%" : "25%" }}
-                  transition={{ duration: 0.5 }}
-                />
-              </div>
-            </div>
-            <span className="ml-2 text-xs font-medium text-blue-700">
-              {formOpened ? "50%" : "25%"}
-            </span>
+              <Image 
+                src="/FlashfundLogo.png"
+                alt="FlashFund logo"
+                width={80}
+                height={48}
+                className="w-20"
+              />
+            </motion.div>
+            
+            {!loading && kycStatus?.kycStatus !== 'SUCCESS' && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                onClick={handleBack}
+                className="flex items-center justify-center h-9 w-9 rounded-full bg-gray-100 text-gray-600"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </motion.button>
+            )}
           </div>
-        </div>
-      )}
-      
-      {/* Main Content */}
-      <div className="px-4 py-6">
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg"
-          >
-            {error}
-          </motion.div>
+        </header>
+        
+        {/* Progress indicator */}
+        {loading && formUrl && !kycStatus?.kycStatus && (
+          <div className="px-4 py-2 bg-blue-50 w-full">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <div className="h-1 bg-gray-200 rounded-full">
+                  <motion.div 
+                    className="h-1 bg-blue-500 rounded-full"
+                    initial={{ width: "0%" }}
+                    animate={{ width: formOpened ? "50%" : "25%" }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+              </div>
+              <span className="ml-2 text-xs font-medium text-blue-700">
+                {formOpened ? "50%" : "25%"}
+              </span>
+            </div>
+          </div>
         )}
         
-        <AnimatePresence mode="wait">
-          {renderContent()}
-        </AnimatePresence>
+        {/* Main Content */}
+        <div className="px-4 py-6 flex-1">
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg"
+            >
+              {error}
+            </motion.div>
+          )}
+          
+          <AnimatePresence mode="wait">
+            {renderContent()}
+          </AnimatePresence>
+        </div>
+        
+        {/* Bottom assistance note */}
+        {loading && formUrl && !formOpened && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.5 }}
+            className="sticky bottom-0 w-full bg-white p-4 border-t border-gray-100 text-center"
+          >
+            <p className="text-xs text-gray-500">
+              Need help? Call our support at <span className="font-medium">1800-123-4567</span>
+            </p>
+          </motion.div>
+        )}
       </div>
-      
-      {/* Bottom assistance note */}
-      {loading && formUrl && !formOpened && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.5 }}
-          className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 text-center"
-        >
-          <p className="text-xs text-gray-500">
-            Need help? Call our support at <span className="font-medium">1800-123-4567</span>
-          </p>
-        </motion.div>
-      )}
     </div>
   )
 }

@@ -33,6 +33,8 @@ const Prepayment = () => {
       try {
         setUrlLoading(true);
         setProcessing(true);
+        console.log('hii',prepaymentTransactionId);
+        
         const response = await fetch(
           `https://pl.pr.flashfund.in/payment-url/${prepaymentTransactionId}?type=${'prepayment'}`
         );
