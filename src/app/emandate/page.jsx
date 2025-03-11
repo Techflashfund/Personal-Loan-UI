@@ -12,8 +12,7 @@ import { useRouter } from 'next/navigation';
 export default function EMandatePage() {
   const router = useRouter();
   const transactionId = useAuthStore((state) => state.transactionId);
-  const userId = useAuthStore((state) => state.userId)
-  const token = useAuthStore((state) => state.token)
+  
   const [formUrl, setFormUrl] = useState('')
   const [formId, setFormId] = useState('')
   const [mandateStatus, setMandateStatus] = useState(null)
@@ -26,10 +25,7 @@ export default function EMandatePage() {
   const [isApiPending, setIsApiPending] = useState(false) // Track if API call is in progress
   const [buttonsHidden, setButtonsHidden] = useState(false) // Track if buttons should be hidden
   const [statusMessage, setStatusMessage] = useState('') // Status message while fetching
-  if (!userId || !token) {
-    router.push('/signin')
-    return
-  }
+
   // Initial loader effect
   useEffect(() => {
     const timer = setTimeout(() => {

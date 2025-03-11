@@ -13,8 +13,7 @@ import { useRouter } from 'next/navigation';
 export default function KYCPage() {
   const router = useRouter();
   const transactionId = useAuthStore((state) => state.transactionId);
-  const userId = useAuthStore((state) => state.userId)
-  const token = useAuthStore((state) => state.token)
+  
   const [formUrl, setFormUrl] = useState('')
   const [formId, setFormId] = useState('')
   const [kycStatus, setKycStatus] = useState(null)
@@ -23,10 +22,7 @@ export default function KYCPage() {
   const [formOpened, setFormOpened] = useState(false)
   const [processingKyc, setProcessingKyc] = useState(false) // New state to track KYC processing
   const [step, setStep] = useState(1) // Track current step for better mobile UX
-  if (!userId || !token) {
-    router.push('/signin')
-    return
-  }
+
   // Monitor for transactionId changes
   useEffect(() => {
     if (transactionId) {

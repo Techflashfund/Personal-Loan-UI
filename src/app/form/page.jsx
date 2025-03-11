@@ -29,11 +29,7 @@ export default function UserDetailsForm() {
   const setTransactionId = useAuthStore((state) => state.setTransactionId)
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
-
-  if (!userId || !token) {
-    router.push('/signin')
-    return
-  }
+  
 
   const [formData, setFormData] = useState({
     firstName: '',

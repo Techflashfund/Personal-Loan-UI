@@ -13,12 +13,6 @@ import { ChevronRight, CheckCircle, AlertCircle, Lock, User, CreditCard, Banknot
 const BankAccountForm = () => {
   const router = useRouter();
   const userId = useAuthStore((state) => state.userId);
-  const token = useAuthStore((state) => state.token)
-
-  if (!userId || !token) {
-    router.push('/signin')
-    return
-  }
   
   const [formData, setFormData] = useState({
     accountHolderName: "",
