@@ -6,7 +6,7 @@ import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle, XCircle, Clock, RefreshCw, ArrowRight } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Clock, RefreshCw, ArrowRight, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function LoanAgreementPage() {
@@ -20,6 +20,8 @@ export default function LoanAgreementPage() {
   const [formOpened, setFormOpened] = useState(false)
   const [step, setStep] = useState(1)
   const [confirming, setConfirming] = useState(false)
+  const [showButtons, setShowButtons] = useState(true)
+  const [fetchingStatus, setFetchingStatus] = useState(false)
 
   // Monitor for transactionId changes
   useEffect(() => {
@@ -68,6 +70,7 @@ export default function LoanAgreementPage() {
     }
     
     try {
+      setFetchingStatus(true)
       const response = await axios.post('https://pl.pr.flashfund.in/document-status',
         {
           formId,
@@ -81,8 +84,10 @@ export default function LoanAgreementPage() {
       )
       
       setDocumentStatus(response.data)
+      setFetchingStatus(false)
       return response.data.documentStatus
     } catch (error) {
+      setFetchingStatus(false)
       return null
     }
   }
@@ -110,6 +115,12 @@ export default function LoanAgreementPage() {
     sessionStorage.setItem('loanAgreementFormId', formId);
     sessionStorage.setItem('loanAgreementTransactionId', transactionId);
     
+    // Hide buttons and show alert
+    setShowButtons(false)
+    
+    // Alert user not to reload or go back
+    showProcessingAlert()
+    
     // Open in a new tab or redirect to the form URL
     window.open(formUrl, '_blank');
     setFormOpened(true);
@@ -118,7 +129,18 @@ export default function LoanAgreementPage() {
   }
 
   const proceedToInlineForm = () => {
+    // Hide buttons and show alert
+    setShowButtons(false)
+    
+    // Alert user not to reload or go back
+    showProcessingAlert()
+    
     setStep(2);
+  }
+
+  const showProcessingAlert = () => {
+    // Create and show alert banner instead of using JavaScript alert
+    // which can be intrusive and block the UI
   }
 
   const confirmLoan = async () => {
@@ -247,33 +269,62 @@ export default function LoanAgreementPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 h-auto rounded-xl flex items-center justify-center"
-                      onClick={redirectToForm}
+                {showButtons ? (
+                  <div className="space-y-3">
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      Open Loan Agreement
-                      <ArrowRight className="ml-2 w-4 h-4" />
-                    </Button>
-                  </motion.div>
-                  
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button 
-                      variant="outline"
-                      className="w-full border-gray-200 text-gray-700 font-medium py-4 h-auto rounded-xl"
-                      onClick={proceedToInlineForm}
+                      <Button 
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 h-auto rounded-xl flex items-center justify-center"
+                        onClick={redirectToForm}
+                      >
+                        Open Loan Agreement
+                        <ArrowRight className="ml-2 w-4 h-4" />
+                      </Button>
+                    </motion.div>
+                    
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      Complete on This Page
-                    </Button>
-                  </motion.div>
-                </div>
+                      <Button 
+                        variant="outline"
+                        className="w-full border-gray-200 text-gray-700 font-medium py-4 h-auto rounded-xl"
+                        onClick={proceedToInlineForm}
+                      >
+                        Complete on This Page
+                      </Button>
+                    </motion.div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="p-4 bg-amber-50 border border-amber-200 rounded-xl"
+                    >
+                      <div className="flex items-start">
+                        <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-800 mb-1">Do not reload or go back</p>
+                          <p className="text-xs text-amber-700">Your agreement is being processed automatically. Please keep this page open.</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                    
+                    <div className="flex items-center justify-center">
+                      <motion.div 
+                        className="w-5 h-5 border-2 border-blue-200 border-t-blue-500 rounded-full mr-3"
+                        variants={loaderVariants}
+                        animate="animate"
+                      />
+                      <p className="text-sm font-medium text-blue-700">
+                        {fetchingStatus ? 'Fetching agreement status...' : 'Processing your agreement...'}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {formOpened && (
@@ -288,7 +339,9 @@ export default function LoanAgreementPage() {
                       variants={loaderVariants}
                       animate="animate"
                     />
-                    <p className="text-sm font-medium text-blue-700">Loan agreement signing in progress</p>
+                    <p className="text-sm font-medium text-blue-700">
+                      {fetchingStatus ? 'Fetching agreement status...' : 'Loan agreement signing in progress'}
+                    </p>
                   </div>
                   <p className="text-xs text-blue-600">We'll update this page when complete</p>
                 </motion.div>
@@ -306,7 +359,13 @@ export default function LoanAgreementPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 mr-2"
-                  onClick={() => setStep(1)}
+                  onClick={() => {
+                    // Only allow back navigation if buttons are visible (not in processing state)
+                    if (showButtons) {
+                      setStep(1);
+                    }
+                  }}
+                  disabled={!showButtons}
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -344,10 +403,28 @@ export default function LoanAgreementPage() {
                     variants={loaderVariants}
                     animate="animate"
                   />
-                  <p className="text-sm font-medium text-blue-700">Loan agreement signing in progress</p>
+                  <p className="text-sm font-medium text-blue-700">
+                    {fetchingStatus ? 'Fetching agreement status...' : 'Loan agreement signing in progress'}
+                  </p>
                 </div>
                 <p className="text-xs text-blue-600">We'll automatically update when complete</p>
               </motion.div>
+              
+              {!showButtons && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="p-4 bg-amber-50 border-t border-amber-200"
+                >
+                  <div className="flex items-start">
+                    <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800 mb-1">Do not reload or go back</p>
+                      <p className="text-xs text-amber-700">Your agreement is being processed automatically. Please keep this page open.</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           );
         }
@@ -490,6 +567,7 @@ export default function LoanAgreementPage() {
                 <Button 
                   className="w-full bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 h-auto rounded-xl shadow-md flex items-center justify-center"
                   onClick={() => {
+                    setShowButtons(true);
                     setLoading(true);
                     fetchFormUrl();
                   }}
@@ -543,6 +621,7 @@ export default function LoanAgreementPage() {
               <Button 
                 className="w-full bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 h-auto rounded-xl shadow-md flex items-center justify-center"
                 onClick={() => {
+                  setShowButtons(true);
                   setLoading(true);
                   fetchFormUrl();
                 }}
@@ -570,6 +649,25 @@ export default function LoanAgreementPage() {
     }
   };
 
+  // Add window event listener to catch browser back button and page reload attempts
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (!showButtons && loading) {
+        // Standard way of showing a confirmation dialog
+        e.preventDefault();
+        // Chrome requires returnValue to be set
+        e.returnValue = '';
+        return '';
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [showButtons, loading]);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center">
       {/* Fixed Header */}
@@ -595,6 +693,7 @@ export default function LoanAgreementPage() {
               animate={{ opacity: 1, scale: 1 }}
               onClick={handleBack}
               className="flex items-center justify-center h-9 w-9 rounded-full bg-gray-100 text-gray-600"
+              disabled={!showButtons && loading}
             >
               <ArrowLeft className="w-4 h-4" />
             </motion.button>
@@ -635,13 +734,30 @@ export default function LoanAgreementPage() {
           </motion.div>
         )}
         
+        {/* Process alert banner - shown at the top of the page for maximum visibility */}
+        {!showButtons && loading && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg max-w-md w-full"
+          >
+            <div className="flex items-start">
+              <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
+              <div>
+                <p className="font-medium mb-1">Important: Process in Progress</p>
+                <p className="text-sm text-amber-700">Please do not press back or reload the page. Your loan agreement will be processed automatically.</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+        
         <AnimatePresence mode="wait">
           {renderContent()}
         </AnimatePresence>
       </div>
       
       {/* Bottom assistance note */}
-      {loading && formUrl && !formOpened && (
+      {loading && formUrl && !formOpened && showButtons && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -6,12 +6,14 @@ import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle, XCircle, Clock, RefreshCw, ArrowRight } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Clock, RefreshCw, ArrowRight, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function EMandatePage() {
   const router = useRouter();
   const transactionId = useAuthStore((state) => state.transactionId);
+  const userId = useAuthStore((state) => state.userId)
+  const token = useAuthStore((state) => state.token)
   const [formUrl, setFormUrl] = useState('')
   const [formId, setFormId] = useState('')
   const [mandateStatus, setMandateStatus] = useState(null)
@@ -22,7 +24,12 @@ export default function EMandatePage() {
   const [initialLoading, setInitialLoading] = useState(true) // New state for initial loader
   const [retryCount, setRetryCount] = useState(0) // Track API retry attempts
   const [isApiPending, setIsApiPending] = useState(false) // Track if API call is in progress
-
+  const [buttonsHidden, setButtonsHidden] = useState(false) // Track if buttons should be hidden
+  const [statusMessage, setStatusMessage] = useState('') // Status message while fetching
+  if (!userId || !token) {
+    router.push('/signin')
+    return
+  }
   // Initial loader effect
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -62,6 +69,43 @@ export default function EMandatePage() {
     
     return () => clearTimeout(retryTimer);
   }, [retryCount, isApiPending]);
+
+  // Show status updates while fetching
+  useEffect(() => {
+    if (buttonsHidden) {
+      const statusMessages = [
+        "Processing your eMandate...",
+        "Verifying bank details...",
+        "Confirming bank authorization...",
+        "Almost there! Finalizing setup...",
+        "Please wait while we complete your setup..."
+      ];
+      
+      let messageIndex = 0;
+      setStatusMessage(statusMessages[0]);
+      
+      const messageInterval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % statusMessages.length;
+        setStatusMessage(statusMessages[messageIndex]);
+      }, 8000);
+      
+      return () => clearInterval(messageInterval);
+    }
+  }, [buttonsHidden]);
+
+  // Add beforeunload event listener to warn about page reload/navigation
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (buttonsHidden && !mandateStatus?.mandateStatus) {
+        e.preventDefault();
+        e.returnValue = ""; // Chrome requires returnValue to be set
+        return ""; // This message isn't displayed in modern browsers, but is required
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [buttonsHidden, mandateStatus]);
 
   const fetchFormUrl = async () => {
     if (!transactionId) {
@@ -141,6 +185,7 @@ export default function EMandatePage() {
     
     if (status && status !== 'PENDING') {
       setLoading(false)
+      setButtonsHidden(false) // Show buttons again when process is complete
     } else {
       setTimeout(pollMandateStatus, 5000) // Poll every 5 seconds
     }
@@ -155,6 +200,9 @@ export default function EMandatePage() {
   }
 
   const redirectToForm = () => {
+    // Hide buttons and show loading status
+    setButtonsHidden(true);
+    
     // Store formId and transactionId in sessionStorage before redirecting
     sessionStorage.setItem('emandateFormId', formId);
     sessionStorage.setItem('emandateTransactionId', transactionId);
@@ -167,6 +215,7 @@ export default function EMandatePage() {
   }
 
   const proceedToInlineForm = () => {
+    setButtonsHidden(true);
     setStep(2);
   }
 
@@ -312,33 +361,58 @@ export default function EMandatePage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 h-auto rounded-xl flex items-center justify-center"
-                      onClick={redirectToForm}
+                {!buttonsHidden ? (
+                  <div className="space-y-3">
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      Open eMandate Form
-                      <ArrowRight className="ml-2 w-4 h-4" />
-                    </Button>
-                  </motion.div>
-                  
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button 
-                      variant="outline"
-                      className="w-full border-gray-200 text-gray-700 font-medium py-4 h-auto rounded-xl"
-                      onClick={proceedToInlineForm}
+                      <Button 
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 h-auto rounded-xl flex items-center justify-center"
+                        onClick={redirectToForm}
+                      >
+                        Open eMandate Form
+                        <ArrowRight className="ml-2 w-4 h-4" />
+                      </Button>
+                    </motion.div>
+                    
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      Complete on This Page
-                    </Button>
+                      <Button 
+                        variant="outline"
+                        className="w-full border-gray-200 text-gray-700 font-medium py-4 h-auto rounded-xl"
+                        onClick={proceedToInlineForm}
+                      >
+                        Complete on This Page
+                      </Button>
+                    </motion.div>
+                  </div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center justify-center py-4">
+                      <motion.div 
+                        className="w-8 h-8 border-3 border-gray-200 border-t-blue-500 rounded-full mr-3"
+                        variants={loaderVariants}
+                        animate="animate"
+                      />
+                      <p className="text-blue-700 font-medium">{statusMessage}</p>
+                    </div>
+                    
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 flex items-start">
+                      <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm mb-1">Please don't refresh or go back</p>
+                        <p className="text-xs">The process will complete automatically. Going back or refreshing may cause errors.</p>
+                      </div>
+                    </div>
                   </motion.div>
-                </div>
+                )}
               </div>
               
               {formOpened && (
@@ -367,16 +441,32 @@ export default function EMandatePage() {
               className="flex flex-col bg-white rounded-xl shadow-sm overflow-hidden"
             >
               <div className="p-4 border-b border-gray-100 flex items-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 mr-2"
-                  onClick={() => setStep(1)}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
+                {!buttonsHidden && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 mr-2"
+                    onClick={() => setStep(1)}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
                 <h2 className="text-lg font-semibold text-gray-800">Complete eMandate Setup</h2>
               </div>
+              
+              {buttonsHidden && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="p-3 mx-4 mt-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 flex items-start"
+                >
+                  <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sm mb-1">Please don't refresh or go back</p>
+                    <p className="text-xs">The process will complete automatically. Going back or refreshing may cause errors.</p>
+                  </div>
+                </motion.div>
+              )}
               
               <div className="relative">
                 <iframe
@@ -409,7 +499,7 @@ export default function EMandatePage() {
                     variants={loaderVariants}
                     animate="animate"
                   />
-                  <p className="text-sm font-medium text-blue-700">eMandate setup in progress</p>
+                  <p className="text-sm font-medium text-blue-700">{statusMessage || "eMandate setup in progress"}</p>
                 </div>
                 <p className="text-xs text-blue-600">We'll automatically update when complete</p>
               </motion.div>
@@ -644,7 +734,7 @@ export default function EMandatePage() {
               />
             </motion.div>
             
-            {!loading && mandateStatus?.mandateStatus !== 'SUCCESS' && (
+            {!loading && mandateStatus?.mandateStatus !== 'SUCCESS' && !buttonsHidden && (
               <motion.button
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -666,7 +756,7 @@ export default function EMandatePage() {
                   <motion.div 
                     className="h-1 bg-blue-500 rounded-full"
                     initial={{ width: "0%" }}
-                    animate={{ width: formOpened ? "50%" : "25%" }}
+                    animate={{ width: buttonsHidden ? (formOpened ? "75%" : "50%") : (formOpened ? "50%" : "25%") }}
                     transition={{ duration: 0.5 }}
                   />
                 </div>

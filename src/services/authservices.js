@@ -10,7 +10,7 @@ export const signup = async (email, phone, password) => {
   });
 
   if (!response.ok) {
-    throw new Error(response.status === 409 
+    throw new Error(response.status === 400 
       ? 'Email or phone already registered' 
       : 'Signup failed. Please try again'
     );
@@ -66,7 +66,7 @@ export const login = async (email, password) => {
     });
   
     if (!response.ok) {
-      throw new Error(response.status === 401 
+      throw new Error(response.status === 400 
         ? 'Invalid email or password' 
         : response.status === 429 
           ? 'Too many attempts. Please try again later' 

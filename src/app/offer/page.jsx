@@ -15,6 +15,7 @@ const LoanOffers = () => {
   const transactionId = useUserStore((state) => state.transactionId);
   const setProviderId = useUserStore((state) => state.setProviderId)
   const userId = useUserStore((state) => state.userId);
+  const token = useAuthStore((state) => state.token)
   const [offers, setOffers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,7 +26,10 @@ const LoanOffers = () => {
   const [offersLoaded, setOffersLoaded] = useState(false);
   const [applyingId, setApplyingId] = useState(null); // Track which offer is being submitted
   const [fetchAttempts, setFetchAttempts] = useState(0); // Track fetch attempts
-
+  if (!userId || !token) {
+    router.push('/signin')
+    return
+  }
   // Define fetchOffers as a useCallback to properly include it in dependency arrays
   const fetchOffers = useCallback(async () => {
     try {

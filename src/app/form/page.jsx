@@ -30,6 +30,11 @@ export default function UserDetailsForm() {
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
 
+  if (!userId || !token) {
+    router.push('/signin')
+    return
+  }
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -54,17 +59,18 @@ export default function UserDetailsForm() {
     lastUpdated: new Date()
   })
   const isOver21 = (dob) => {
-    const today = new Date()
-    const birthDate = new Date(dob)
-    const age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
-    
+    const today = new Date();
+    const birthDate = new Date(dob);
+    let age = today.getFullYear() - birthDate.getFullYear(); // Change `const` to `let`
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--
+      age--; // Now, `age` can be updated
     }
-    
-    return age >= 21
-  }
+
+    return age >= 21;
+};
+
 
   const validateForm = (data, currentStep) => {
     let newErrors = {}

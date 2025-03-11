@@ -7,20 +7,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle, XCircle, Clock, RefreshCw, ArrowRight } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Clock, RefreshCw, ArrowRight, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function KYCPage() {
   const router = useRouter();
   const transactionId = useAuthStore((state) => state.transactionId);
+  const userId = useAuthStore((state) => state.userId)
+  const token = useAuthStore((state) => state.token)
   const [formUrl, setFormUrl] = useState('')
   const [formId, setFormId] = useState('')
   const [kycStatus, setKycStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [formOpened, setFormOpened] = useState(false)
+  const [processingKyc, setProcessingKyc] = useState(false) // New state to track KYC processing
   const [step, setStep] = useState(1) // Track current step for better mobile UX
-
+  if (!userId || !token) {
+    router.push('/signin')
+    return
+  }
   // Monitor for transactionId changes
   useEffect(() => {
     if (transactionId) {
@@ -34,6 +40,23 @@ export default function KYCPage() {
       pollKycStatus()
     }
   }, [formId])
+
+  // Add beforeunload event listener to warn users about leaving the page
+  useEffect(() => {
+    if (processingKyc) {
+      const handleBeforeUnload = (e) => {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      };
+    }
+  }, [processingKyc]);
 
   const fetchFormUrl = async () => {
     if (!transactionId) {
@@ -96,13 +119,21 @@ export default function KYCPage() {
     
     if (status && status !== 'PENDING') {
       setLoading(false)
+      setProcessingKyc(false) // KYC processing complete
     } else {
       setTimeout(pollKycStatus, 5000) // Poll every 5 seconds
     }
   }
 
   const handleBack = () => {
-    router.push('/main')
+    if (processingKyc) {
+      // Show confirmation dialog if KYC is in process
+      if (window.confirm("Your KYC verification is in progress. Going back may disrupt this process. Are you sure you want to leave?")) {
+        router.push('/main')
+      }
+    } else {
+      router.push('/main')
+    }
   }
 
   const redirectToEMandate = () => {
@@ -114,14 +145,19 @@ export default function KYCPage() {
     sessionStorage.setItem('kycFormId', formId);
     sessionStorage.setItem('kycTransactionId', transactionId);
     
+    // Set processing state to true
+    setProcessingKyc(true);
+    setFormOpened(true);
+    
     // Open in a new tab or redirect to the form URL
     window.open(formUrl, '_blank');
-    setFormOpened(true);
+    
     // Start polling for status even though the user is on another page
     pollKycStatus();
   }
 
   const proceedToInlineForm = () => {
+    setProcessingKyc(true);
     setStep(2);
   }
 
@@ -160,6 +196,25 @@ export default function KYCPage() {
     }
   };
 
+  // Warning banner for KYC in progress
+  const ProcessingWarningBanner = () => (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      className="w-full bg-amber-50 border-l-4 border-amber-500 p-4 mb-4"
+    >
+      <div className="flex items-start">
+        <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="font-medium text-amber-800 text-sm">Important</p>
+          <p className="text-xs text-amber-700 mt-1">
+            Please do not press back or reload this page. Your KYC verification is in progress and will be completed automatically.
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+
   // Render the appropriate step
   const renderContent = () => {
     if (!transactionId) {
@@ -190,6 +245,8 @@ export default function KYCPage() {
               {...fadeIn}
               className="flex flex-col bg-white rounded-xl shadow-sm overflow-hidden"
             >
+              {processingKyc && <ProcessingWarningBanner />}
+              
               <div className="p-6 border-b border-gray-100">
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mr-3">
@@ -224,33 +281,55 @@ export default function KYCPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 h-auto rounded-xl flex items-center justify-center"
-                      onClick={redirectToForm}
+                {!processingKyc ? (
+                  <div className="space-y-3">
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      Open KYC Form
-                      <ArrowRight className="ml-2 w-4 h-4" />
-                    </Button>
-                  </motion.div>
-                  
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button 
-                      variant="outline"
-                      className="w-full border-gray-200 text-gray-700 font-medium py-4 h-auto rounded-xl"
-                      onClick={proceedToInlineForm}
+                      <Button 
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 h-auto rounded-xl flex items-center justify-center"
+                        onClick={redirectToForm}
+                      >
+                        Open KYC Form
+                        <ArrowRight className="ml-2 w-4 h-4" />
+                      </Button>
+                    </motion.div>
+                    
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      Complete on This Page
-                    </Button>
+                      <Button 
+                        variant="outline"
+                        className="w-full border-gray-200 text-gray-700 font-medium py-4 h-auto rounded-xl"
+                        onClick={proceedToInlineForm}
+                      >
+                        Complete on This Page
+                      </Button>
+                    </motion.div>
+                  </div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="bg-blue-50 p-6 rounded-xl border border-blue-100"
+                  >
+                    <div className="flex items-center justify-center mb-4">
+                      <motion.div 
+                        className="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full"
+                        variants={loaderVariants}
+                        animate="animate"
+                      />
+                    </div>
+                    <h3 className="text-center font-medium text-blue-700 mb-2">
+                      Fetching KYC Status
+                    </h3>
+                    <p className="text-center text-sm text-blue-600">
+                      Please wait while we confirm your verification status
+                    </p>
                   </motion.div>
-                </div>
+                )}
               </div>
               
               {formOpened && (
@@ -278,15 +357,19 @@ export default function KYCPage() {
               {...slideIn}
               className="flex flex-col bg-white rounded-xl shadow-sm overflow-hidden"
             >
+              {processingKyc && <ProcessingWarningBanner />}
+              
               <div className="p-4 border-b border-gray-100 flex items-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 mr-2"
-                  onClick={() => setStep(1)}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
+                {!processingKyc && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 mr-2"
+                    onClick={() => setStep(1)}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
                 <h2 className="text-lg font-semibold text-gray-800">Complete Verification</h2>
               </div>
               
@@ -568,7 +651,7 @@ export default function KYCPage() {
               />
             </motion.div>
             
-            {!loading && kycStatus?.kycStatus !== 'SUCCESS' && (
+            {!loading && kycStatus?.kycStatus !== 'SUCCESS' && !processingKyc && (
               <motion.button
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -620,18 +703,24 @@ export default function KYCPage() {
         </div>
         
         {/* Bottom assistance note */}
-        {loading && formUrl && !formOpened && (
+        {(loading && formUrl && !formOpened && !processingKyc) || (processingKyc && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 0.5 }}
             className="sticky bottom-0 w-full bg-white p-4 border-t border-gray-100 text-center"
           >
-            <p className="text-xs text-gray-500">
-              Need help? Call our support at <span className="font-medium">1800-123-4567</span>
-            </p>
+            {processingKyc ? (
+              <p className="text-xs text-amber-600 font-medium">
+                Please remain on this page while we process your verification
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500">
+                Need help? Call our support at <span className="font-medium">1800-123-4567</span>
+              </p>
+            )}
           </motion.div>
-        )}
+        ))}
       </div>
     </div>
   )

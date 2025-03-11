@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { signup, verifyEmail, resendOtp } from '@/services/authservices'
 import { validateEmail, validatePhone, validatePassword, validateOtp } from '@/utils/validation'
 
 export default function SignupPage() {
+  const router=useRouter()
   const [loading, setLoading] = useState(false)
   const [verifying, setVerifying] = useState(false)
   const [email, setEmail] = useState('')
@@ -141,7 +143,7 @@ export default function SignupPage() {
         description: data.message || 'Email verified successfully!',
       })
       setTimeout(() => {
-        window.location.href = '/signin'
+       router.push('/signin')
       }, 1500)
     } catch (error) {
       setErrors(prev => ({ ...prev, server: error.message }))
