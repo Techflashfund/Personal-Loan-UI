@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { signup, verifyEmail, resendOtp } from '@/services/authservices'
 import { validateEmail, validatePhone, validatePassword, validateOtp } from '@/utils/validation'
 
-export default function SignupPage() {
+// Create a client component that uses useSearchParams
+function SignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
@@ -197,7 +198,7 @@ export default function SignupPage() {
 
     <div className="relative z-10 max-w-screen-xl mx-auto px-4">
       {/* Header with shadow and glass effect */}
-      <div className="  pt-6 pb-2 px-6">
+      <div className="pt-6 pb-2 px-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -479,5 +480,26 @@ export default function SignupPage() {
       </div>
     </div>
   </div>
-  )
+  );
+}
+
+// Loading fallback component
+function SignupLoading() {
+  return (
+    <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-slate-50 to-blue-50">
+      <div className="text-center">
+        <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-slate-600">Loading signup form...</p>
+      </div>
+    </div>
+  );
+}
+
+// Main component that wraps the form in Suspense
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<SignupLoading />}>
+      <SignupForm />
+    </Suspense>
+  );
 }
