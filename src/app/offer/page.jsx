@@ -25,6 +25,7 @@ const LoanOffers = () => {
   const [offersLoaded, setOffersLoaded] = useState(false);
   const [applyingId, setApplyingId] = useState(null); // Track which offer is being submitted
   const [fetchAttempts, setFetchAttempts] = useState(0); // Track fetch attempts
+  const [flippedCards, setFlippedCards] = useState({}); // Track flip state of each card
 
   // Card color schemes
   const cardColorSchemes = [
@@ -87,6 +88,7 @@ const LoanOffers = () => {
       // Initialize loan and EMI amounts
       const initialAmounts = {};
       const initialEmiAmounts = {};
+      const initialFlippedStates = {};
       
       data.forEach(offer => {
         const initialLoanAmount = offer.loanAmount / 2;
@@ -95,10 +97,14 @@ const LoanOffers = () => {
         // Calculate initial EMI based on the initial loan amount
         const calculatedEmi = calculateEMI(initialLoanAmount, offer.interestRate, offer.term);
         initialEmiAmounts[offer.lenderId] = calculatedEmi;
+        
+        // Initialize all cards as not flipped
+        initialFlippedStates[offer.lenderId] = false;
       });
       
       setLoanAmounts(initialAmounts);
       setEmiAmounts(initialEmiAmounts);
+      setFlippedCards(initialFlippedStates);
       setOffersLoaded(true);
     } catch (err) {
       setError(err.message);
@@ -108,6 +114,14 @@ const LoanOffers = () => {
       setIsLoading(false);
     }
   }, [transactionId]);
+
+  // Function to toggle card flip state
+  const toggleCardFlip = (lenderId) => {
+    setFlippedCards(prev => ({
+      ...prev,
+      [lenderId]: !prev[lenderId]
+    }));
+  };
 
   // Function to calculate EMI
   const calculateEMI = (principal, interestRate, termInMonths) => {
@@ -179,7 +193,10 @@ const LoanOffers = () => {
     setOffers(sortedOffers);
   };
 
-  const handleApply = async (lenderId) => {
+  const handleApply = async (lenderId, event) => {
+    // Prevent card flip when clicking the apply button
+    event.stopPropagation();
+    
     try {
       setApplyingId(lenderId); // Set loading state for this specific button
       const selectedAmount = loanAmounts[lenderId];
@@ -349,9 +366,14 @@ const LoanOffers = () => {
           ) : (
             offers.map((offer, index) => {
               const colorScheme = getColorScheme(index);
+              const isFlipped = flippedCards[offer.lenderId] || false;
+              
               return (
                 <div key={index} className="card mx-auto">
-                  <div className="card-inner">
+                  <div 
+                    className={`card-inner ${isFlipped ? 'flipped' : ''}`}
+                    onClick={() => toggleCardFlip(offer.lenderId)}
+                  >
                     {/* Front Side with dynamic colors */}
                     <div className={`card-front bg-gradient-to-r ${colorScheme.front}`}>
                       <div className="space-y-3 w-full p-4">
@@ -401,6 +423,7 @@ const LoanOffers = () => {
                             step={1000}
                             className="my-2"
                             onValueChange={(value) => handleSliderChange(value, offer.lenderId)}
+                            onClick={(e) => e.stopPropagation()} // Prevent card flip when interacting with slider
                           />
                           <p className="text-center font-bold">
                             ₹{loanAmounts[offer.lenderId]?.toLocaleString() || (offer.loanAmount / 2).toLocaleString()}
@@ -418,10 +441,14 @@ const LoanOffers = () => {
                           </div>
                         </div>
 
+                        <div className="text-sm text-center mt-1 mb-2">
+                          <p className="opacity-80"><span className='text-lg underline'>Tap</span> to go back</p>
+                        </div>
+
                         <Button 
                           className="w-full bg-white hover:bg-white/90 font-semibold"
                           style={{ color: colorScheme.buttonText }}
-                          onClick={() => handleApply(offer.lenderId)}
+                          onClick={(e) => handleApply(offer.lenderId, e)}
                           disabled={applyingId === offer.lenderId}
                         >
                           {applyingId === offer.lenderId ? (
@@ -482,8 +509,7 @@ const LoanOffers = () => {
           transition: transform 0.999s;
         }
 
-        .card:hover .card-inner,
-        .card:active .card-inner {
+        .card-inner.flipped {
           transform: rotateY(180deg);
         }
 
