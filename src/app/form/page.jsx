@@ -50,7 +50,7 @@ export default function UserDetailsForm() {
     city: '',
     state: '',
     pincode: '',
-    aa_id: '',
+    // aa_id: '',
     bureauConsent: false,
     lastUpdated: new Date()
   })
@@ -110,7 +110,7 @@ export default function UserDetailsForm() {
       if (!data.pincode) newErrors.pincode = "Pincode is required"
       else if (!/^\d{6}$/.test(data.pincode)) 
         newErrors.pincode = "Pincode must be 6 digits"
-      if (!data.aa_id.trim()) newErrors.aa_id = "AA ID is required"
+      // if (!data.aa_id.trim()) newErrors.aa_id = "AA ID is required"
       if (!data.bureauConsent) newErrors.bureauConsent = "Bureau consent is required"
     }
     
@@ -570,7 +570,7 @@ export default function UserDetailsForm() {
                 {touched.pincode && <ErrorMessage error={errors.pincode} />}
               </div>
 
-              <div>
+              {/* <div>
                 <Label htmlFor="aa_id" className="text-sm font-medium">AA ID *</Label>
                 <Input
                   id="aa_id"
@@ -582,7 +582,7 @@ export default function UserDetailsForm() {
                   className={`mt-1 ${touched.aa_id && errors.aa_id ? 'border-red-500' : ''}`}
                 />
                 {touched.aa_id && <ErrorMessage error={errors.aa_id} />}
-              </div>
+              </div> */}
 
               <div className="flex items-start space-x-2 pt-4">
                 <div className="mt-1">

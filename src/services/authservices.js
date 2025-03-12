@@ -1,12 +1,12 @@
 const API_BASE_URL = 'https://pl.pr.flashfund.in/api/auth';
 
-export const signup = async (email, phone, password) => {
+export const signup = async (email, phone, password, referrer) => {
   const response = await fetch(`${API_BASE_URL}/signup`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, phone, password }),
+    body: JSON.stringify({ email, phone, password,referrer }),
   });
 
   if (!response.ok) {

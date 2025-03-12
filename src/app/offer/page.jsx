@@ -26,6 +26,40 @@ const LoanOffers = () => {
   const [applyingId, setApplyingId] = useState(null); // Track which offer is being submitted
   const [fetchAttempts, setFetchAttempts] = useState(0); // Track fetch attempts
 
+  // Card color schemes
+  const cardColorSchemes = [
+    { 
+      front: 'from-[#6A2C70] via-purple-500 to-purple-700', 
+      back: '#B83B5E',
+      text: '#fff',
+      buttonText: '#B83B5E'
+    },
+    { 
+      front: 'from-[#2C3E50] via-blue-600 to-blue-800', 
+      back: '#3498DB',
+      text: '#fff',
+      buttonText: '#3498DB'
+    },
+    { 
+      front: 'from-[#27AE60] via-green-500 to-green-700', 
+      back: '#16A085',
+      text: '#fff',
+      buttonText: '#16A085'
+    },
+    { 
+      front: 'from-[#E74C3C] via-red-500 to-red-700', 
+      back: '#C0392B',
+      text: '#fff',
+      buttonText: '#C0392B'
+    },
+    { 
+      front: 'from-[#F39C12] via-yellow-500 to-yellow-600', 
+      back: '#D35400',
+      text: '#fff',
+      buttonText: '#D35400'
+    }
+  ];
+
   // Define fetchOffers as a useCallback to properly include it in dependency arrays
   const fetchOffers = useCallback(async () => {
     try {
@@ -46,6 +80,8 @@ const LoanOffers = () => {
       }
 
       const data = await response.json();
+      console.log('dataaa',data);
+      
       setOffers(data);
       
       // Initialize loan and EMI amounts
@@ -176,6 +212,11 @@ const LoanOffers = () => {
     }
   };
 
+  // Get a color scheme for a specific offer index
+  const getColorScheme = (index) => {
+    return cardColorSchemes[index % cardColorSchemes.length];
+  };
+
   // Show loading animation if either initial loading or offers are still loading
   const showLoading = !initialLoadingComplete || (initialLoadingComplete && isLoading);
 
@@ -196,6 +237,7 @@ const LoanOffers = () => {
               width={180}
               height={110}
               className="w-36"
+              unoptimized
             />
           </motion.div>
           
@@ -240,6 +282,7 @@ const LoanOffers = () => {
               width={180}
               height={110}
               className="w-44"
+              unoptimized
             />
           </div>
           <div className="text-lg font-semibold text-gray-600">
@@ -304,102 +347,122 @@ const LoanOffers = () => {
               </Button>
             </div>
           ) : (
-            offers.map((offer, index) => (
-              <div key={index} className="card mx-auto">
-                <div className="card-inner">
-                  {/* Front Side */}
-                  <div className="card-front bg-gradient-to-r from-[#6A2C70] via-purple-500 to-purple-700">
-                    <div className="space-y-3 w-full p-4">
-                      <div className="flex items-center gap-3 justify-between">
-                        <div className="flex items-center gap-2">
-                          <BanknoteIcon className="w-6 h-6" />
-                          <h3 className="font-semibold">{offer.lenderName}</h3>
+            offers.map((offer, index) => {
+              const colorScheme = getColorScheme(index);
+              return (
+                <div key={index} className="card mx-auto">
+                  <div className="card-inner">
+                    {/* Front Side with dynamic colors */}
+                    <div className={`card-front bg-gradient-to-r ${colorScheme.front}`}>
+                      <div className="space-y-3 w-full p-4">
+                        <div className="flex items-center gap-3 justify-between">
+                          <div className="flex items-center gap-2">
+                            <BanknoteIcon className="w-6 h-6 text-white" />
+                            <h3 className="font-semibold">{offer.lenderName}</h3>
+                          </div>
+                          <span className="text-sm bg-white/20 px-2 py-1 rounded">
+                            {offer.interestRate}interest
+                          </span>
                         </div>
-                        <span className="text-sm bg-white/20 px-2 py-1 rounded">
-                          {offer.interestRate}interest
-                        </span>
-                      </div>
-                      
-                      <div className="text-center mt-2">
-                        <p className="text-2xl font-bold">₹{offer.loanAmount.toLocaleString()}</p>
-                        <p className="text-sm opacity-80">Maximum Amount</p>
-                      </div>
-                      
-                      <div className="text-sm text-center">
-                        <p className="opacity-80"><span className='text-xl underline'>Tap</span> to see more details</p>
+                        
+                        {/* Logo displayed properly with fixed height */}
+                        {offer.lenderImageUrl && (
+                          <div className="flex justify-center h-12 my-2">
+                            <Image 
+                              src={offer.lenderImageUrl}
+                              alt={`${offer.lenderName} logo`}
+                              width={100}
+                              height={40}
+                              className="h-full w-auto object-contain"
+                              unoptimized
+                            />
+                          </div>
+                        )}
+                        
+                        <div className="text-center mt-2">
+                          <p className="text-2xl font-bold">₹{offer.loanAmount.toLocaleString()}</p>
+                          <p className="text-sm opacity-80">Maximum Amount</p>
+                        </div>
+                        
+                        <div className="text-sm text-center">
+                          <p className="opacity-80"><span className='text-lg underline'>Tap</span> to see more details</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Back Side */}
-                  <div className="card-back">
-                    <div className="w-full p-4 space-y-3">
-                      <div className="space-y-2">
-                        <Slider
-                          defaultValue={[loanAmounts[offer.lenderId] || offer.loanAmount / 2]}
-                          max={offer.loanAmount}
-                          min={offer.loanAmount * 0.2}
-                          step={1000}
-                          className="my-2"
-                          onValueChange={(value) => handleSliderChange(value, offer.lenderId)}
-                        />
-                        <p className="text-center font-bold">
-                          ₹{loanAmounts[offer.lenderId]?.toLocaleString() || (offer.loanAmount / 2).toLocaleString()}
-                        </p>
-                      </div>
-
-                      <div className="text-sm space-y-1">
-                        <div className="flex justify-between">
-                          <span>Term:</span>
-                          <span>{offer.term} </span>
+                    {/* Back Side with dynamic colors */}
+                    <div className="card-back" style={{ backgroundColor: colorScheme.back, color: colorScheme.text }}>
+                      <div className="w-full p-4 space-y-3">
+                        <div className="space-y-2">
+                          <Slider
+                            defaultValue={[loanAmounts[offer.lenderId] || offer.loanAmount / 2]}
+                            max={offer.loanAmount}
+                            min={offer.loanAmount * 0.2}
+                            step={1000}
+                            className="my-2"
+                            onValueChange={(value) => handleSliderChange(value, offer.lenderId)}
+                          />
+                          <p className="text-center font-bold">
+                            ₹{loanAmounts[offer.lenderId]?.toLocaleString() || (offer.loanAmount / 2).toLocaleString()}
+                          </p>
                         </div>
-                        <div className="flex justify-between">
-                          <span>EMI:</span>
-                          <span>₹{emiAmounts[offer.lenderId]?.toLocaleString() || offer.installmentAmount.toLocaleString()}/mo</span>
-                        </div>
-                      </div>
 
-                      <Button 
-                        className="w-full bg-white text-[#F08A5D] hover:bg-white/90 font-semibold"
-                        onClick={() => handleApply(offer.lenderId)}
-                        disabled={applyingId === offer.lenderId}
-                      >
-                        {applyingId === offer.lenderId ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          'Apply Now'
-                        )}
-                      </Button>
+                        <div className="text-sm space-y-1">
+                          <div className="flex justify-between">
+                            <span>Term:</span>
+                            <span>{offer.term} </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>EMI:</span>
+                            <span>₹{emiAmounts[offer.lenderId]?.toLocaleString() || offer.installmentAmount.toLocaleString()}/mo</span>
+                          </div>
+                        </div>
+
+                        <Button 
+                          className="w-full bg-white hover:bg-white/90 font-semibold"
+                          style={{ color: colorScheme.buttonText }}
+                          onClick={() => handleApply(offer.lenderId)}
+                          disabled={applyingId === offer.lenderId}
+                        >
+                          {applyingId === offer.lenderId ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            'Apply Now'
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
 
       {/* ONDC Footer */}
       <div className="w-full bg-white py-4 mt-auto border-t">
-        <p className="text-sm text-slate-600 flex items-center justify-center">
-                    Powered by <Image 
-                    src="/ondc-network-vertical.png"
-                    alt="FlashFund logo"
-                    width={100}
-                    height={60}
-                    className="w-35"
-                  />
-                  </p>
+        <p className="text-sm text-slate-600 flex items-center justify-center gap-2">
+          Powered by 
+          <Image 
+            src="/ondc-network-vertical.png"
+            alt="ONDC Network"
+            width={70}
+            height={35}
+            className="h-8 w-auto"
+            unoptimized
+          />
+        </p>
       </div>
 
       <style jsx>{`
         .card {
           width: 100%;
           max-width: 340px;
-          height: 200px;
+          height: 220px;
           perspective: 1000px;
           margin: 0 auto;
           touch-action: manipulation;
@@ -407,7 +470,7 @@ const LoanOffers = () => {
 
         @media (max-width: 640px) {
           .card {
-            height: 180px;
+            height: 200px;
           }
         }
 
@@ -431,24 +494,19 @@ const LoanOffers = () => {
           height: 100%;
           backface-visibility: hidden;
           border-radius: 16px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
         .card-front {
-          background-color: ;
           color: #fff;
           display: flex;
           align-items: center;
-          
           transform: rotateY(0deg);
         }
 
         .card-back {
-          background-color: #F08A5D;
-          color: #fff;
           display: flex;
           align-items: center;
-          border: 10px solid #F08A5D;
           transform: rotateY(180deg);
         }
       `}</style>

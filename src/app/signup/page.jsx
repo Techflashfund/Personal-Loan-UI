@@ -6,20 +6,22 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { signup, verifyEmail, resendOtp } from '@/services/authservices'
 import { validateEmail, validatePhone, validatePassword, validateOtp } from '@/utils/validation'
 
 export default function SignupPage() {
-  const router=useRouter()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [verifying, setVerifying] = useState(false)
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [otp, setOtp] = useState('')
+  const [referrer, setReferrer] = useState('')
   const [formTouched, setFormTouched] = useState(false)
   const [errors, setErrors] = useState({
     email: '',
@@ -29,6 +31,14 @@ export default function SignupPage() {
     server: ''
   })
   const [resendCooldown, setResendCooldown] = useState(0)
+
+  // Extract referral code from URL params
+  useEffect(() => {
+    const ref = searchParams.get('ref')
+    if (ref) {
+      setReferrer(ref)
+    }
+  }, [searchParams])
 
   // Handle resend OTP cooldown timer
   useEffect(() => {
@@ -114,7 +124,8 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      const data = await signup(email, phone, password)
+      // Include referrer in signup request if available
+      const data = await signup(email, phone, password, referrer)
       setVerifying(true)
       setResendCooldown(60)
       toast.success('Success', {
@@ -251,6 +262,22 @@ export default function SignupPage() {
           </motion.h1>
           <div className="h-px flex-1 bg-gradient-to-l from-transparent to-blue-200"></div>
         </div>
+
+        {/* Show referrer info if exists */}
+        {referrer && !verifying && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+            className="mb-4"
+          >
+            <Alert className="bg-green-50 text-green-800 border-green-200">
+              <AlertDescription>
+                You were referred by: <span className="font-medium">{referrer}</span>
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
 
         {/* Signup/Verification Card */}
         <motion.div
@@ -436,14 +463,14 @@ export default function SignupPage() {
         >
           <div className="inline-flex items-center px-4 py-2 bg-transparent backdrop-blur-sm rounded-full shadow-sm">
             <p className="text-sm text-slate-600 flex items-center justify-center">
-                        Powered by <Image 
-                        src="/ondc-network-vertical.png"
-                        alt="FlashFund logo"
-                        width={100}  // Increased from 140
-                        height={60} // Increased from 85
-                        className="w-35"  // Increased from w-36
-                      />
-                      </p>
+              Powered by <Image 
+                src="/ondc-network-vertical.png"
+                alt="FlashFund logo"
+                width={100}
+                height={60}
+                className="w-35"
+              />
+            </p>
           </div>
           <p className="text-xs text-slate-500 mt-2">
             Open Network for Digital Commerce
@@ -452,6 +479,5 @@ export default function SignupPage() {
       </div>
     </div>
   </div>
-
   )
 }
