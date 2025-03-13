@@ -34,9 +34,13 @@ const TicketsPage = () => {
         }
         
         const data = await response.json();
-        // Assuming response structure matches the example
-        if (data && data.response) {
+        // Ensure that we're always setting tickets to an array
+        if (data && Array.isArray(data.response)) {
           setTickets(data.response);
+        } else if (data && data.response && !Array.isArray(data.response)) {
+          // If data.response exists but is not an array, convert it to an array
+          console.warn("API returned non-array response:", data.response);
+          setTickets(Array.isArray(data.response) ? data.response : [data.response]);
         } else {
           setTickets([]);
         }
@@ -73,27 +77,34 @@ const TicketsPage = () => {
   
   const handleRemoveTicket = async (ticketId) => {
     try {
-      // Implement ticket removal API call here
-      // For demonstration, we'll just remove it from the local state
-      setTickets(tickets.filter(ticket => ticket._id !== ticketId));
-      closeModal();
+      const ticket = tickets.find(t => t._id === ticketId);
       
-      // In a real implementation, you would call your API:
-      /*
-      await fetch(`https://pl.pr.flashfund.in/issue_status/remove`, {
+      if (!ticket) {
+        throw new Error("Ticket not found");
+      }
+      
+      // Call the API to complete the issue
+      const response = await fetch('https://pl.pr.flashfund.in/issues/complete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-          userId, 
-          ticketId 
+          transactionId: ticket.transactionId,
+          issueId: ticket.issueId
         })
       });
-      */
+      
+      if (!response.ok) {
+        throw new Error(`Failed to complete ticket: ${response.status}`);
+      }
+      
+      // Remove from UI after successful API call
+      setTickets(tickets.filter(t => t._id !== ticketId));
+      closeModal();
       
     } catch (err) {
-      console.error("Failed to remove ticket:", err);
+      console.error("Failed to complete ticket:", err);
       // Optionally show an error message to the user
     }
   };
@@ -159,6 +170,9 @@ const TicketsPage = () => {
     return `${date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })} ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
   };
   
+  // Ensure tickets is always an array before mapping
+  const ticketsArray = Array.isArray(tickets) ? tickets : [];
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 pb-8">
       {/* Background elements */}
@@ -185,7 +199,7 @@ const TicketsPage = () => {
           <div className="bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-sm">
             <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
               <span className="text-blue-700 font-semibold text-sm">
-                {userId ? userId.substring(0, 2).toUpperCase() : "U"}
+                FA
               </span>
             </div>
           </div>
@@ -233,7 +247,7 @@ const TicketsPage = () => {
                 Retry
               </Button>
             </div>
-          ) : tickets.length === 0 ? (
+          ) : ticketsArray.length === 0 ? (
             <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-md border-0 p-5 mb-4 text-center">
               <p className="text-slate-600 mb-4">No tickets found</p>
               <Button
@@ -245,7 +259,7 @@ const TicketsPage = () => {
             </div>
           ) : (
             <>
-              {tickets.map((ticket, index) => (
+              {ticketsArray.map((ticket, index) => (
                 <motion.div
                   key={ticket._id || index}
                   initial={{ opacity: 0, y: 10 }}
@@ -399,7 +413,7 @@ const TicketsPage = () => {
                     className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 flex items-center gap-2"
                   >
                     <Trash2 size={16} />
-                    Remove Ticket
+                    Close Ticket
                   </Button>
                 </div>
               </motion.div>

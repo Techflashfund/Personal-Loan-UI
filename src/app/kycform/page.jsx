@@ -80,7 +80,9 @@ export default function KYCPage() {
       setError('Failed to load KYC form')
     }
   }
-
+  const handleIGMSupport=()=>{
+    router.push('/igmmain')
+  }
   const checkKycStatus = async () => {
     if (!formId || !transactionId) {
       return null
@@ -504,6 +506,11 @@ export default function KYCPage() {
                 >
                   Go to Dashboard
                 </Button>
+                <p className="text-s text-slate-500 mt-2 underline">
+  <button onClick={handleIGMSupport} className='underline text-white'>
+    click here for support?
+  </button>
+</p>
               </motion.div>
             </div>
             
@@ -553,6 +560,11 @@ export default function KYCPage() {
                   
                   Try Again
                 </Button>
+                <p className="text-s text-slate-500 mt-2 underline">
+  <button onClick={handleIGMSupport} className='underline text-blue-500'>
+    click here for support?
+  </button>
+</p>
               </motion.div>
               
               <motion.div
@@ -711,9 +723,11 @@ export default function KYCPage() {
                 Please remain on this page while we process your verification
               </p>
             ) : (
-              <p className="text-xs text-gray-500">
-                Need help? Call our support at <span className="font-medium">1800-123-4567</span>
-              </p>
+              <p className="text-s text-slate-500 mt-2 underline">
+  <button onClick={handleIGMSupport} className='underline text-blue-500'>
+    click here for support?
+  </button>
+</p>
             )}
           </motion.div>
         ))}

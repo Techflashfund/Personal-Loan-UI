@@ -44,6 +44,10 @@ const BankAccountForm = () => {
     setErrorMessage("");
     setSuccessMessage("");
   };
+  const handleIGMSupport = () => {
+    router.push('/igmmain')
+  }
+  
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -524,9 +528,11 @@ const BankAccountForm = () => {
               />
             </p>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
-            Open Network for Digital Commerce
-          </p>
+          <p className="text-s text-slate-500 mt-2 underline">
+  <button onClick={handleIGMSupport} className='underline text-blue-500'>
+    click here for support?
+  </button>
+</p>
         </motion.div>
       </div>
     </div>

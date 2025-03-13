@@ -13,7 +13,8 @@ import Image from "next/image";
 const IGMComponent = () => {
   const router = useRouter();
   const userId = useAuthStore((state) => state.userId);
-  const igmTransactionId = useAuthStore((state) => state.igmTransactionId);
+  
+  const transactionId = useAuthStore((state) => state.transactionId);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -63,13 +64,14 @@ const IGMComponent = () => {
       
       // Prepare data for API
       const payload = {
-        transactionId: igmTransactionId,
+        transactionId,
         name: formData.name,
         phone: formData.phone,
         email: formData.email,
         shortDesc: formData.issue,
         longDesc: formData.message
       };
+      console.log(payload);
       
       // Send data to backend
       const response = await fetch('https://pl.pr.flashfund.in/issues/create', {

@@ -63,7 +63,9 @@ export default function LoanAgreementPage() {
       setError('Failed to load loan agreement form')
     }
   }
-
+ const handleIGMSupport=()=>{
+  router.push('/igmmain')
+ }
   const checkDocumentStatus = async () => {
     if (!formId || !transactionId) {
       return null
@@ -522,6 +524,11 @@ export default function LoanAgreementPage() {
                     </>
                   )}
                 </Button>
+                <p className="text-s text-slate-500 mt-2 underline">
+  <button onClick={handleIGMSupport} className='underline text-white'>
+    click here for support?
+  </button>
+</p>
               </motion.div>
             </div>
             
@@ -764,9 +771,11 @@ export default function LoanAgreementPage() {
           transition={{ delay: 1, duration: 0.5 }}
           className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 text-center"
         >
-          <p className="text-xs text-gray-500 max-w-md mx-auto">
-            Need help? Call our support at <span className="font-medium">1800-123-4567</span>
-          </p>
+          <p className="text-s text-slate-500 mt-2 underline">
+  <button onClick={handleIGMSupport} className='underline text-blue-500'>
+    click here for support?
+  </button>
+</p>
         </motion.div>
       )}
     </div>

@@ -66,6 +66,10 @@ export default function EMandatePage() {
     return () => clearTimeout(retryTimer);
   }, [retryCount, isApiPending]);
 
+  const handleIGMSupport=()=>{
+    router.push('/igmmain')
+  }
+
   // Show status updates while fetching
   useEffect(() => {
     if (buttonsHidden) {
@@ -789,9 +793,11 @@ export default function EMandatePage() {
             transition={{ delay: 1, duration: 0.5 }}
             className="w-full bg-white p-4 border-t border-gray-100 text-center"
           >
-            <p className="text-xs text-gray-500">
-              Need help? Call our support at <span className="font-medium">1800-123-4567</span>
-            </p>
+            <p className="text-s text-slate-500 mt-2 underline">
+  <button onClick={handleIGMSupport} className='underline text-blue-500'>
+    click here for support?
+  </button>
+</p>
           </motion.div>
         )}
       </div>

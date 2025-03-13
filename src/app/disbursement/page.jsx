@@ -44,7 +44,9 @@ export default function DisbursementPage() {
       if (timer) clearTimeout(timer)
     }
   }, [countdown, loading, pollingActive])
-
+ const handleIGMSupport=()=>{
+  router.push('/igmmain')
+ }
   const checkDisbursementStatus = async () => {
     if (!transactionId) {
       setError('Transaction ID not found')
@@ -324,6 +326,11 @@ export default function DisbursementPage() {
                       Once the disbursement is complete, you'll receive a confirmation notification. The funds typically reflect in your account within 24 hours, depending on your bank's processing time.
                     </p>
                   </div>
+                  <p className="text-s text-slate-500 mt-2 underline">
+  <button onClick={handleIGMSupport} className='underline text-blue-500'>
+    click here for support?
+  </button>
+</p>
                 </div>
               </motion.div>
             </motion.div>

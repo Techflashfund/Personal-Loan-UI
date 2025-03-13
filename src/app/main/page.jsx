@@ -16,6 +16,7 @@ const LoanProcess = () => {
   const token = useAuthStore((state) => state.token)
   const setTransactionId = useAuthStore((state) => state.setTransactionId)
   const [loading, setLoading] = useState(false)
+  
   const handleNext = async () => {
     try {
       setLoading(true)
@@ -50,6 +51,11 @@ const LoanProcess = () => {
       setLoading(false)
     }
   }
+  
+  const handleIGMSupport = () => {
+    router.push('/igmmain')
+  }
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 pb-8">
       {/* Subtle background patterns */}
@@ -61,21 +67,40 @@ const LoanProcess = () => {
       {/* Content container with z-index */}
       <div className="relative z-10">
         {/* Header with shadow and glass effect */}
-        <div className=" pt-6 pb-4 px-6">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex justify-center"
-          >
-            <Image 
-              src="/FlashfundLogo.png"
-              alt="FlashFund logo"
-              width={180}
-              height={110}
-              className="w-36"
-            />
-          </motion.div>
+        <div className="pt-6 pb-4 px-6">
+          <div className="flex justify-between items-center">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="flex justify-center"
+            >
+              <Image 
+                src="/FlashfundLogo.png"
+                alt="FlashFund logo"
+                width={180}
+                height={110}
+                className="w-36"
+              />
+            </motion.div>
+            
+            {/* IGM Support Button */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <Button 
+                onClick={handleIGMSupport}
+                className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-full px-4 py-2 text-sm font-medium shadow-md hover:shadow-lg transition-all duration-300 flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                IGM Support
+              </Button>
+            </motion.div>
+          </div>
         </div>
 
         {/* Loan Process Content */}
@@ -273,16 +298,17 @@ const LoanProcess = () => {
                  rounded-xl shadow-lg relative overflow-hidden group"
             onClick={handleNext}
             disabled={loading}>
-            
-              
-            {loading ? 'Processing...' : 'Next'}
-            {!loading && (
+              {loading ? 'Processing...' : 'Next'}
+              {!loading && (
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
                 )}
             </Button>
           </motion.div>
+
+          {/* Floating IGM Support Button for Mobile */}
+          
 
           {/* ONDC Attribution with premium styling */}
           <motion.div
@@ -293,14 +319,14 @@ const LoanProcess = () => {
           >
             <div className="inline-flex items-center px-4 py-2 bg-transparent backdrop-blur-sm rounded-full shadow-sm">
               <p className="text-sm text-slate-600 flex items-center justify-center">
-                          Powered by <Image 
-                          src="/ondc-network-vertical.png"
-                          alt="FlashFund logo"
-                          width={100}  // Increased from 140
-                          height={60} // Increased from 85
-                          className="w-35"  // Increased from w-36
-                        />
-                        </p>
+                Powered by <Image 
+                  src="/ondc-network-vertical.png"
+                  alt="FlashFund logo"
+                  width={100}
+                  height={60}
+                  className="w-35"
+                />
+              </p>
             </div>
             <p className="text-xs text-slate-500 mt-2">
               Open Network for Digital Commerce
