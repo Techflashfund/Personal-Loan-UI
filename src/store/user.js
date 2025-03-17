@@ -8,11 +8,12 @@ const useAuthStore = create(
       userId: null,
       transactionId: null,
       foreclosureTransactionId: null,
-      prepaymentTransactionId: null, // Added for foreclosure transaction
+      prepaymentTransactionId: null,
       providerId: null,
-      igmTransactionId: null, // Added for IGMT transaction
+      igmTransactionId: null,
       isAuthenticated: false,
-      
+      originalRequest: null, // Add this line
+
       setAuth: (token, userId) => set({
         token,
         userId,
@@ -24,11 +25,11 @@ const useAuthStore = create(
       }),
 
       setForeclosureTransactionId: (foreclosureTransactionId) => set({
-        foreclosureTransactionId, // Set foreclosure transaction ID
+        foreclosureTransactionId,
       }),
 
       setprepaymentTransactionId: (prepaymentTransactionId) => set({
-        prepaymentTransactionId, // Set prepayment transaction ID
+        prepaymentTransactionId,
       }),
 
       setProviderId: (providerId) => set({
@@ -36,18 +37,23 @@ const useAuthStore = create(
       }),
 
       setIgmTransactionId: (igmTransactionId) => set({
-        igmTransactionId, // Set IGMT transaction ID
+        igmTransactionId,
+      }),
+
+      setOriginalRequest: (originalRequest) => set({ // Add this action
+        originalRequest,
       }),
 
       clearAuth: () => set({
         token: null,
         userId: null,
         transactionId: null,
-        foreclosureTransactionId: null, 
-        prepaymentTransactionId: null, // Clear foreclosure transaction
-        igmTransactionId: null, // Clear IGMT transaction ID
+        foreclosureTransactionId: null,
+        prepaymentTransactionId: null,
+        igmTransactionId: null,
         providerId: null,
         isAuthenticated: false,
+        originalRequest: null, // Clear originalRequest
       }),
     }),
     {
