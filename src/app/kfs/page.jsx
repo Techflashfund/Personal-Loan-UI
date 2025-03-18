@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '@/store/user';
+import { Duration } from "luxon";
 
 const KeyFactsStatement = () => {
   const router = useRouter();
@@ -50,6 +51,16 @@ const KeyFactsStatement = () => {
       }
     }
   }, [originalRequest]);
+  const convertISO8601ToDays = (isoDuration) => {
+    const duration = Duration.fromISO(isoDuration);
+    let result = [];
+  if (duration.days) result.push(`${duration.days} day${duration.days > 1 ? "s" : ""}`);
+  if (duration.hours) result.push(`${duration.hours} hour${duration.hours > 1 ? "s" : ""}`);
+  if (duration.minutes) result.push(`${duration.minutes} minute${duration.minutes > 1 ? "s" : ""}`);
+  if (duration.seconds) result.push(`${duration.seconds} second${duration.seconds > 1 ? "s" : ""}`);
+
+  return result.length > 0 ? result.join(", ") : "0 minutes"; 
+  };
 
   const handleContinue = () => {
     if (hasConsent) {
@@ -169,7 +180,9 @@ const KeyFactsStatement = () => {
             </div>
             <div className="flex justify-between border-b border-gray-200 py-2">
               <span className="text-gray-600">Cool-off Period</span>
-              <span className="font-medium">{loanData.coolOffPeriod}</span>
+              <span className="font-medium">
+  {convertISO8601ToDays(loanData.coolOffPeriod)}
+</span>
             </div>
           </div>
         </div>

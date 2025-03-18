@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import useAuthStore from '../store/user';
 
 // List of public routes that don't require authentication
-const publicRoutes = ['/', '/signin', '/signup','/reset',"/offer",'/kfs'];
+const publicRoutes = ['/', '/signin', '/signup','/reset',"/offer",'/kfs','/disbursement'];
 
 export default function ProtectedRoute({ children }) {
   const router = useRouter();
