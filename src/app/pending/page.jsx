@@ -49,7 +49,7 @@ const ReturningUserDashboard = () => {
       : 0;
 
     // Get payment schedule details from the new payments array
-    const paymentSchedule = loan.payments || [];
+    const paymentSchedule = loan.payments.installments || [];
     const totalPayments = paymentSchedule.length;
 
     // Find next payment
@@ -415,10 +415,10 @@ const ReturningUserDashboard = () => {
                     <span className="font-semibold text-slate-800">₹{processedData.netDisbursedAmount.toLocaleString()}</span>
                   </div>
                   
-                  <div className="flex justify-between items-center mb-4">
+                  {/* <div className="flex justify-between items-center mb-4">
                     <span className="text-sm text-slate-500">EMI Amount</span>
                     <span className="font-semibold text-slate-800">₹{parseFloat(loan.loanDetails.installmentAmount).toLocaleString()}</span>
-                  </div>
+                  </div> */}
                   
                   <div className="mb-4">
                     <div className="flex justify-between items-center mb-2">
@@ -458,7 +458,7 @@ const ReturningUserDashboard = () => {
                             
                             return (
                               <tr key={i} className="border-b border-blue-100">
-                                <td className="p-1.5">{payment.installmentId}</td>
+                                <td className="p-1.5">{payment.installmentNumber}</td>
                                 <td className="p-1.5">{dueDate}</td>
                                 <td className="p-1.5">₹{parseFloat(payment.amount).toLocaleString()}</td>
                                 <td className={`p-1.5 font-medium ${statusColor}`}>
