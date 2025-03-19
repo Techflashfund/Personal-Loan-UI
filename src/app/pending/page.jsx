@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input"; // Import Input component
+import { Input } from "@/components/ui/input";
 import useAuthStore from '@/store/user';
 import Link from 'next/link';
 import Image from "next/image";
@@ -15,42 +15,48 @@ const ReturningUserDashboard = () => {
   const userId = useAuthStore((state) => state.userId);
   const token = useAuthStore((state) => state.token);
   const setForeclosureTransactionId = useAuthStore(state => state.setForeclosureTransactionId);
-  const setprepaymentTransactionId= useAuthStore(state => state.setprepaymentTransactionId);
-  const setIgmTransactionId = useAuthStore(state => state.setIgmTransactionId); // Add IGM transaction ID setter
+  const setprepaymentTransactionId = useAuthStore(state => state.setprepaymentTransactionId);
+  const setIgmTransactionId = useAuthStore(state => state.setIgmTransactionId);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hasMissedEmi, setHasMissedEmi] = useState(false);
-  const [loans, setLoans] = useState([]); // Store all loans
-  const [currentPage, setCurrentPage] = useState(1); // Pagination state
-  const [prepayAmount, setPrepayAmount] = useState(''); // State for prepay amount input
-  const [showPrepayInput, setShowPrepayInput] = useState(false); // Toggle for prepay input
+  const [loans, setLoans] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [prepayAmount, setPrepayAmount] = useState('');
+  const [showPrepayInput, setShowPrepayInput] = useState(false);
+  const [foreclosureDetails, setForeclosureDetails] = useState(null);
+  const [showForeclosureDetails, setShowForeclosureDetails] = useState(false);
 
-  const loansPerPage = 1; // Number of loans to display per page
+  const loansPerPage = 1;
 
   const processLoanData = (loan) => {
     if (!loan) {
       return null;
     }
 
-    // Extract customer name
-    const customerName = loan.customer.name || "User";
+    // Extract customer name - Using placeholder since customer details might be missing in new structure
+    const customerName = loan.customer?.name || userId || "User";
     const firstName = customerName.split(' ')[0];
 
-    // Calculate total loan amount from breakdown
-    const netDisbursedAmount = loan.breakdown.find(item => item.title === "NET_DISBURSED_AMOUNT")?.amount || 0;
-    const totalLoanAmount = loan.loanDetails.amount || 0;
+    // Calculate total loan amount and net disbursed amount from new structure
+    const totalLoanAmount = parseFloat(loan.loanDetails.amount) || 0;
+    
+    // Extract net disbursed amount from breakdown (which is now an object with named properties)
+    const netDisbursedAmount = loan.breakdown?.net_disbursed_amount?.amount 
+      ? parseFloat(loan.breakdown.net_disbursed_amount.amount) 
+      : 0;
 
-    // Get payment schedule details
-    const paymentSchedule = loan.paymentSchedule;
+    // Get payment schedule details from the new payments array
+    const paymentSchedule = loan.payments || [];
     const totalPayments = paymentSchedule.length;
 
     // Find next payment
     const currentDate = new Date();
     const nextPayment = paymentSchedule.find(payment => {
-      const endDate = new Date(payment.endDate);
-      return endDate >= currentDate && payment.status === "NOT-PAID";
+      const dueDate = new Date(payment.dueDate);
+      return dueDate >= currentDate && payment.status === "NOT-PAID";
     });
 
     // Check if all EMIs are paid or deferred
@@ -66,23 +72,37 @@ const ReturningUserDashboard = () => {
     // Check for missed EMIs
     const missedEmis = paymentSchedule.filter(payment => 
       payment.status === "NOT-PAID" && 
-      new Date(payment.endDate) < new Date()
+      new Date(payment.dueDate) < new Date()
     );
+
+    // Format payment schedule for display
+    const formattedPaymentSchedule = paymentSchedule.map(payment => ({
+      installmentId: payment.installmentId,
+      amount: payment.amount,
+      status: payment.status,
+      endDate: payment.dueDate,
+      startDate: payment.startDate
+    }));
 
     return {
       name: firstName,
-      loanAmount: parseFloat(totalLoanAmount),
-      netDisbursedAmount: parseFloat(netDisbursedAmount),
+      loanAmount: totalLoanAmount,
+      netDisbursedAmount: netDisbursedAmount,
       nextPayment: nextPayment ? parseFloat(nextPayment.amount) : 0,
       nextPaymentDate: nextPayment 
-        ? new Date(nextPayment.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+        ? new Date(nextPayment.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
         : "N/A",
       completedPayments: completedPayments,
       totalPayments: totalPayments,
-      paymentSchedule: paymentSchedule,
+      paymentSchedule: formattedPaymentSchedule,
       isLoanClosed: allEmisPaidOrDeferred,
       hasMissedEmi: missedEmis.length > 0,
-      transactionId: loan.transactionId
+      transactionId: loan.transactionId,
+      providerName: loan.provider?.name || "Lender",
+      providerLogo: loan.provider?.logo || "",
+      interestRate: loan.loanDetails?.interestRate || "N/A",
+      term: loan.loanDetails?.term || "N/A",
+      documents: loan.documents || []
     };
   };
 
@@ -155,7 +175,8 @@ const ReturningUserDashboard = () => {
 
   const handleForeclosure = async (loan) => {
     try {
-      const response = await fetch('https://pl.pr.flashfund.in/foreclosure', {
+      // First get foreclosure details
+      const detailsResponse = await fetch('https://pl.pr.flashfund.in/foreclosure/details', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -163,12 +184,37 @@ const ReturningUserDashboard = () => {
         body: JSON.stringify({ transactionId: loan.transactionId })
       });
       
+      if (!detailsResponse.ok) {
+        throw new Error(`Foreclosure details API Error: ${detailsResponse.status}`);
+      }
+      
+      const foreDetails = await detailsResponse.json();
+      setForeclosureDetails(foreDetails);
+      setShowForeclosureDetails(true);
+    } catch (err) {
+      console.error("Failed to get foreclosure details:", err);
+      setError(err.message);
+      
+      // Fallback to direct foreclosure if details API fails
+      proceedWithForeclosure(loan.transactionId);
+    }
+  };
+  
+  const proceedWithForeclosure = async (transactionId) => {
+    try {
+      const response = await fetch('https://pl.pr.flashfund.in/foreclosure', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ transactionId })
+      });
+      
       if (!response.ok) {
         throw new Error(`Foreclosure API Error: ${response.status}`);
       }
-      setForeclosureTransactionId(loan.transactionId);
-
-      // Only navigate to foreclosure if the API call is successful
+      
+      setForeclosureTransactionId(transactionId);
       router.push('/foreclosure');
     } catch (err) {
       console.error("Failed to process foreclosure:", err);
@@ -193,20 +239,17 @@ const ReturningUserDashboard = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-          
           transactionId,
           amount: parseFloat(prepayAmount)
         })
       });
 
       if (response.ok) {
-        
         setprepaymentTransactionId(transactionId);
         router.push('/prepay');
+      } else {
+        throw new Error(`Prepayment API Error: ${response.status}`);
       }
-     
-
-      
     } catch (err) {
       console.error("Failed to process prepayment:", err);
       setError(err.message);
@@ -237,10 +280,13 @@ const ReturningUserDashboard = () => {
     }
   };
 
-  // Function to handle support ticket for a specific loan
   const handleSupportTicket = (transactionId) => {
     setIgmTransactionId(transactionId);
     router.push('/igm');
+  };
+  
+  const handleDownloadDocument = (url) => {
+    window.open(url, '_blank');
   };
 
   if (!userId || loading) {
@@ -342,9 +388,26 @@ const ReturningUserDashboard = () => {
                     </Button>
                   </div>
                   
+                  {/* Lender Details - New Section */}
+                  <div className="flex items-center mb-4 p-3 bg-blue-50 rounded-lg">
+                    {processedData.providerLogo && (
+                      <Image 
+                        src={processedData.providerLogo}
+                        alt={`${processedData.providerName} logo`}
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 mr-3 object-contain"
+                      />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">Lender: {processedData.providerName}</p>
+                      <p className="text-xs text-slate-500">Term: {processedData.term} | Interest: {processedData.interestRate}</p>
+                    </div>
+                  </div>
+                  
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-sm text-slate-500">Total Loan Amount</span>
-                    <span className="font-semibold text-slate-800">₹{parseInt(loan.loanDetails.amount).toLocaleString()}</span>
+                    <span className="font-semibold text-slate-800">₹{parseInt(processedData.loanAmount).toLocaleString()}</span>
                   </div>
                   
                   <div className="flex justify-between items-center mb-1">
@@ -411,6 +474,26 @@ const ReturningUserDashboard = () => {
                     </div>
                   </div>
                   
+                  {/* Documents Section - New */}
+                  {processedData.documents && processedData.documents.length > 0 && (
+                    <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                      <p className="text-sm font-medium text-slate-700 mb-2">Documents</p>
+                      <div className="space-y-2">
+                        {processedData.documents.map((doc, i) => (
+                          <div key={i} className="flex justify-between items-center">
+                            <div className="text-xs text-slate-600">{doc.name}</div>
+                            <Button 
+                              onClick={() => handleDownloadDocument(doc.url)}
+                              className="h-8 bg-white text-blue-600 hover:bg-blue-100 text-xs px-2"
+                            >
+                              Download
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Next Payment Display */}
                   {!processedData.isLoanClosed && processedData.nextPayment > 0 && (
                     <div className="bg-blue-50 p-4 rounded-lg mb-4">
@@ -437,6 +520,65 @@ const ReturningUserDashboard = () => {
                     <div className="w-full bg-green-100 text-green-700 font-medium rounded-xl h-12 flex items-center justify-center">
                       Loan Closed
                     </div>
+                  )}
+                  
+                  {/* Foreclosure Details Modal */}
+                  {showForeclosureDetails && foreclosureDetails && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+                    >
+                      <div className="bg-white rounded-xl p-5 max-w-md w-full max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">Foreclosure Details</h3>
+                        
+                        <div className="space-y-3 mb-6">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-600">Principal Outstanding</span>
+                            <span className="font-medium">₹{(foreclosureDetails.principalOutstanding || 0).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-600">Interest Due</span>
+                            <span className="font-medium">₹{(foreclosureDetails.interestDue || 0).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-600">Foreclosure Fee</span>
+                            <span className="font-medium">₹{(foreclosureDetails.foreclosureFee || 0).toLocaleString()}</span>
+                          </div>
+                          {foreclosureDetails.penalties > 0 && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-slate-600">Penalties</span>
+                              <span className="font-medium">₹{foreclosureDetails.penalties.toLocaleString()}</span>
+                            </div>
+                          )}
+                          <div className="pt-3 border-t border-slate-200">
+                            <div className="flex justify-between items-center">
+                              <span className="text-base font-medium text-slate-800">Total Amount</span>
+                              <span className="text-lg font-bold text-blue-700">₹{(foreclosureDetails.totalAmount || 0).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex space-x-3">
+                          <Button
+                            onClick={() => setShowForeclosureDetails(false)}
+                            className="flex-1 bg-slate-200 text-slate-700 hover:bg-slate-300"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setShowForeclosureDetails(false);
+                              proceedWithForeclosure(loan.transactionId);
+                            }}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            Proceed
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
                   )}
                   
                   {showPaymentOptions && (
@@ -522,14 +664,13 @@ const ReturningUserDashboard = () => {
           {/* Pagination Controls - only show if more than one loan */}
           {loans.length > 1 && (
             <div className="flex justify-center mt-4 mb-6">
-              {Array.from({ length: Math.ceil(loans.length / loansPerPage) }, (_, i) => (
-                <Button
+              {Array.from({ length: Math.ceil(loans.length / loansPerPage) }, (_, i) => (                <Button
                   key={i + 1}
                   onClick={() => paginate(i + 1)}
-                  className={`mx-1 h-8 w-8 p-0 ${
-                    currentPage === i + 1 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-white text-blue-600 border border-blue-200'
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    currentPage === i + 1
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-slate-700 hover:bg-blue-50"
                   }`}
                 >
                   {i + 1}
@@ -537,44 +678,10 @@ const ReturningUserDashboard = () => {
               ))}
             </div>
           )}
-
-          {/* ONDC Attribution */}
-          <div className="mt-4 mb-20 flex flex-col items-center">
-            {/* Powered by ONDC */}
-            <div className="text-center mb-6">
-               <p className="text-sm text-slate-600 flex items-center justify-center">
-                                        Powered by <Image 
-                                        src="/ondc-network-vertical.png"
-                                        alt="FlashFund logo"
-                                        width={100}
-                                        height={60}
-                                        className="w-35"
-                                      />
-                                      </p>
-            </div>
-          </div>
         </div>
       </div>
-
-      {/* Error Display at the Bottom */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="fixed bottom-0 left-0 right-0 bg-red-100 p-4 text-center text-red-700 font-medium shadow-lg"
-        >
-          {error}
-          <button 
-            onClick={() => setError(null)}
-            className="ml-4 text-red-700 hover:text-red-900"
-          >
-            &times;
-          </button>
-        </motion.div>
-      )}
     </div>
   );
-}
+};
 
 export default ReturningUserDashboard;
