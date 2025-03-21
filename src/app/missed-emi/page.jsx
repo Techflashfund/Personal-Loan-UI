@@ -8,7 +8,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import useAuthStore from '@/store/user';
 
-const Prepayment = () => {
+const MissedEMI = () => {
   const router = useRouter();
   const [processing, setProcessing] = useState(false);
   const [urlLoading, setUrlLoading] = useState(true);
@@ -20,13 +20,13 @@ const Prepayment = () => {
   const [error, setError] = useState(null);
   const [showFullDetails, setShowFullDetails] = useState(false);
 
-  // Get prepayment transaction ID from the store
-  const prepaymentTransactionId = useAuthStore((state) => state.prepaymentTransactionId);
+  // Get missed EMI transaction ID from the store
+  const missedEmiTransactionId = useAuthStore((state) => state.MissedemiTransactionID);
 
   // Fetch payment URL and details from the API
   useEffect(() => {
-    if (!prepaymentTransactionId) {
-      setError("No prepayment transaction ID found. Please try again.");
+    if (!missedEmiTransactionId) {
+      setError("No missed EMI transaction ID found. Please try again.");
       setUrlLoading(false);
       return;
     }
@@ -37,7 +37,7 @@ const Prepayment = () => {
         setProcessing(true);
         
         const response = await fetch(
-          `https://pl.pr.flashfund.in/payment-url/${prepaymentTransactionId}?type=${'prepayment'}`
+          `https://pl.pr.flashfund.in/payment-url/${missedEmiTransactionId}?type=${'missed'}`
         );
 
         if (!response.ok) {
@@ -64,7 +64,7 @@ const Prepayment = () => {
     };
 
     fetchPaymentUrl();
-  }, [prepaymentTransactionId]);
+  }, [missedEmiTransactionId]);
 
   // Handle opening payment URL in a new tab
   const handleProceedToPayment = () => {
@@ -113,6 +113,36 @@ const Prepayment = () => {
     }).format(value);
   };
 
+  // Function to extract EMI details
+  const extractEmiDetails = () => {
+    if (!loanDetails || !loanDetails.payments) return null;
+    
+    // Find the delayed payment
+    const delayedPayment = loanDetails.payments.find(payment => 
+      payment.status === "DELAYED" || 
+      (payment.status === "NOT-PAID" && payment.time?.label === "MISSED_EMI_PAYMENT")
+    );
+    
+    if (!delayedPayment) return null;
+    
+    return {
+      amount: delayedPayment.params?.amount || '',
+      currency: delayedPayment.params?.currency || 'INR',
+      period: delayedPayment.time?.range ? {
+        start: new Date(delayedPayment.time.range.start).toLocaleDateString('en-IN'),
+        end: new Date(delayedPayment.time.range.end).toLocaleDateString('en-IN')
+      } : null
+    };
+  };
+
+  // Extract late fee if available
+  const extractLateFee = () => {
+    if (!loanDetails || !loanDetails.quote || !loanDetails.quote.breakup) return null;
+    
+    const lateFee = loanDetails.quote.breakup.find(item => item.title === "LATE_FEE_AMOUNT");
+    return lateFee ? lateFee.price.value : null;
+  };
+
   if (paymentProcessing) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center">
@@ -154,7 +184,7 @@ const Prepayment = () => {
               </svg>
             </div>
             <h2 className="text-xl font-bold text-slate-800 mb-2">Payment Successful!</h2>
-            <p className="text-slate-600 mb-6">Your loan prepayment has been successfully processed.</p>
+            <p className="text-slate-600 mb-6">Your missed EMI payment has been successfully processed.</p>
             <p className="text-sm text-slate-500 mb-6">Redirecting to dashboard...</p>
           </Card>
         </motion.div>
@@ -164,7 +194,8 @@ const Prepayment = () => {
 
   // Calculate charges from the loan details
   const charges = extractCharges();
-  const prepaymentCharges = charges.filter(charge => charge.title === "PRE_PAYMENT_CHARGE");
+  const emiDetails = extractEmiDetails();
+  const lateFee = extractLateFee();
   const outstandingPrincipal = charges.filter(charge => charge.title === "OUTSTANDING_PRINCIPAL");
   const outstandingInterest = charges.filter(charge => charge.title === "OUTSTANDING_INTEREST");
 
@@ -195,7 +226,7 @@ const Prepayment = () => {
             />
             <h2 className="text-2xl font-bold text-slate-800 mb-2">Loading Payment Details</h2>
             <p className="text-slate-600 text-center max-w-xs">
-              We're preparing your prepayment information. This will just take a moment.
+              We're preparing your missed EMI payment information. This will just take a moment.
             </p>
           </div>
         </div>
@@ -231,20 +262,20 @@ const Prepayment = () => {
         </div>
 
         <div className="max-w-md mx-auto px-5 pt-2">
-          {/* Prepayment Title */}
+          {/* Missed EMI Title */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-2xl p-5 mb-6 shadow-lg"
+            className="bg-gradient-to-r from-red-600 to-red-400 rounded-2xl p-5 mb-6 shadow-lg"
           >
             <div className="flex items-center mb-2">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
-                <span className="text-xl">💰</span>
+                <span className="text-xl">⚠️</span>
               </div>
-              <h2 className="text-white font-semibold text-xl leading-tight">Loan Prepayment</h2>
+              <h2 className="text-white font-semibold text-xl leading-tight">Missed EMI Payment</h2>
             </div>
-            <p className="text-white/90 text-sm">Make an additional payment to reduce your principal amount.</p>
+            <p className="text-white/90 text-sm">Pay your missed EMI to avoid additional late fees and penalties.</p>
           </motion.div>
 
           {/* Important Note Alert */}
@@ -259,12 +290,12 @@ const Prepayment = () => {
               </svg>
               <AlertTitle className="ml-3 text-amber-800 font-medium text-sm">Important</AlertTitle>
               <AlertDescription className="ml-3 text-amber-700 text-xs">
-                Prepayment will reduce your loan principal. Your EMI amount will remain the same, but your loan tenure will be shortened.
+                Late payment of EMIs can affect your credit score. Paying missed EMIs promptly helps maintain a good credit history.
               </AlertDescription>
             </Alert>
           </motion.div>
 
-          {/* Prepayment Details Card */}
+          {/* Payment Details Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -272,21 +303,35 @@ const Prepayment = () => {
             className="mb-6"
           >
             <Card className="p-5 rounded-xl shadow-md border-0 bg-white/95 overflow-hidden">
-              <h3 className="font-semibold text-slate-700 text-lg mb-4">Prepayment Details</h3>
+              <h3 className="font-semibold text-slate-700 text-lg mb-4">Payment Details</h3>
               
-              {!urlLoading && paymentDetails ? (
+              {!urlLoading && (paymentDetails || emiDetails) ? (
                 <div className="space-y-4 mb-6">
                   {/* Highlight Section */}
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-4">
+                  <div className="bg-red-50 p-4 rounded-lg border border-red-100 mb-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-blue-700">Prepayment Amount</span>
-                      <span className="font-bold text-blue-800 text-lg">₹{paymentDetails.amount}</span>
+                      <span className="text-sm font-medium text-red-700">Missed EMI Amount</span>
+                      <span className="font-bold text-red-800 text-lg">
+                        {paymentDetails?.amount ? 
+                          `₹${paymentDetails.amount}` : 
+                          emiDetails?.amount ? 
+                            `₹${emiDetails.amount}` : 
+                            'N/A'}
+                      </span>
                     </div>
-                    <div className="h-px bg-blue-200 my-2"></div>
-                    {prepaymentCharges.length > 0 && (
+                    <div className="h-px bg-red-200 my-2"></div>
+                    {lateFee && (
                       <div className="flex justify-between items-center mt-2">
-                        <span className="text-sm font-medium text-blue-700">Prepayment Charges</span>
-                        <span className="font-semibold text-blue-800">{formatCurrency(prepaymentCharges[0].value)}</span>
+                        <span className="text-sm font-medium text-red-700">Late Fee</span>
+                        <span className="font-semibold text-red-800">{formatCurrency(lateFee)}</span>
+                      </div>
+                    )}
+                    {emiDetails?.period && (
+                      <div className="mt-2 pt-2 border-t border-red-200">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-red-700">EMI Period</span>
+                          <span className="text-sm text-red-800">{emiDetails.period.start} - {emiDetails.period.end}</span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -295,11 +340,13 @@ const Prepayment = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-slate-500">Currency</span>
-                      <span className="font-semibold text-slate-800">{paymentDetails.currency}</span>
+                      <span className="font-semibold text-slate-800">
+                        {paymentDetails?.currency || emiDetails?.currency || 'INR'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-slate-500">Status</span>
-                      <span className="font-semibold text-slate-800">{paymentDetails.status}</span>
+                      <span className="font-semibold text-red-600">Overdue</span>
                     </div>
                   </div>
                   
@@ -372,7 +419,7 @@ const Prepayment = () => {
                          loanDetails.items[0].tags[0].list && 
                          loanDetails.items[0].tags[0].list.map((item, index) => {
                           // Only display relevant loan info
-                          if (['INTEREST_RATE', 'TERM', 'FORECLOSURE_FEE', 'DELAY_PENALTY_FEE'].includes(item.descriptor.code)) {
+                          if (['INTEREST_RATE', 'TERM', 'DELAY_PENALTY_FEE'].includes(item.descriptor.code)) {
                             return (
                               <div key={`loan-info-${index}`} className="flex justify-between items-center">
                                 <span className="text-slate-500">{item.descriptor.name}</span>
@@ -393,7 +440,7 @@ const Prepayment = () => {
               ) : null}
               
               <Button 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl h-12"
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl h-12"
                 onClick={handleProceedToPayment}
                 disabled={!paymentUrl || processing || urlLoading}
               >
@@ -406,7 +453,7 @@ const Prepayment = () => {
                     Processing...
                   </span>
                 ) : (
-                  "Proceed to Payment"
+                  "Pay Now"
                 )}
               </Button>
             </Card>
@@ -437,4 +484,4 @@ const Prepayment = () => {
   );
 };
 
-export default Prepayment;
+export default MissedEMI;

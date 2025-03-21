@@ -16,6 +16,8 @@ const Foreclosure = () => {
   const [success, setSuccess] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [paymentDetails, setPaymentDetails] = useState(null);
+  const [breakupDetails, setBreakupDetails] = useState(null);
+  const [loanInfo, setLoanInfo] = useState(null);
   const [error, setError] = useState(null);
 
   // Get foreclosure transaction ID from the store
@@ -42,8 +44,25 @@ const Foreclosure = () => {
         }
 
         const data = await response.json();
+        console.log('data', data);
+        
         setPaymentUrl(data.paymentUrl);
         setPaymentDetails(data.paymentDetails);
+        
+        // Extract breakup details if available
+        if (data.details?.message?.order?.quote?.breakup) {
+          setBreakupDetails(data.details.message.order.quote.breakup);
+        }
+        
+        // Extract loan information if available
+        if (data.details?.message?.order?.items?.[0]?.tags) {
+          const loanTags = data.details.message.order.items[0].tags.find(
+            tag => tag.descriptor.code === "LOAN_INFO"
+          );
+          if (loanTags) {
+            setLoanInfo(loanTags.list);
+          }
+        }
       } catch (err) {
         console.error("Error fetching payment URL:", err);
         setError(err.message);
@@ -55,6 +74,13 @@ const Foreclosure = () => {
 
     fetchPaymentUrl();
   }, [foreclosureTransactionId]);
+
+  // Find a specific breakup item by title
+  const findBreakupItem = (title) => {
+    if (!breakupDetails) return null;
+    const item = breakupDetails.find(item => item.title === title);
+    return item ? item.price.value : "0";
+  };
 
   // Handle opening payment URL in a new tab
   const handleProceedToPayment = () => {
@@ -76,6 +102,15 @@ const Foreclosure = () => {
   // Handle back to dashboard
   const handleBackToDashboard = () => {
     router.push('/dashboard');
+  };
+
+  // Format currency value
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(value);
   };
 
   if (paymentProcessing) {
@@ -127,6 +162,32 @@ const Foreclosure = () => {
     );
   }
 
+  // Full page loading while fetching initial data
+  if (urlLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full px-5"
+        >
+          <Card className="p-8 rounded-xl shadow-lg border-0 text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Loading Foreclosure Details</h2>
+            <p className="text-slate-600 mb-6">We're preparing your loan foreclosure information.</p>
+            <p className="text-sm text-slate-500">This may take a few moments. Please wait...</p>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 pb-8">
       {/* Subtle background patterns */}
@@ -164,7 +225,7 @@ const Foreclosure = () => {
           </motion.div>
         </div>
 
-        <div className="max-w-md mx-auto px-5 pt-2">
+        <div className="max-w-md mx-auto px-5 pt-2 pb-20">
           {/* Foreclosure Title */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -198,7 +259,7 @@ const Foreclosure = () => {
             </Alert>
           </motion.div>
 
-          {/* Foreclosure Details Card */}
+          {/* Loan Summary Card */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -206,32 +267,96 @@ const Foreclosure = () => {
             className="mb-6"
           >
             <Card className="p-5 rounded-xl shadow-md border-0 bg-white/95 overflow-hidden">
+              <h3 className="font-semibold text-slate-700 text-lg mb-4">Loan Summary</h3>
+              
+              <div className="space-y-2 mb-4">
+                {loanInfo && (
+                  <>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-500">Loan Type</span>
+                      <span className="font-medium text-slate-800">Personal Loan</span>
+                    </div>
+                    {loanInfo.map((item, index) => {
+                      // Only show relevant loan information
+                      if (['INTEREST_RATE', 'TERM', 'FORECLOSURE_FEE'].includes(item.descriptor.code)) {
+                        return (
+                          <div key={index} className="flex justify-between items-center text-sm">
+                            <span className="text-slate-500">{item.descriptor.name}</span>
+                            <span className="font-medium text-slate-800">{item.value}</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
+                  </>
+                )}
+                
+                {breakupDetails && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Principal Amount</span>
+                    <span className="font-medium text-slate-800">
+                      {formatCurrency(findBreakupItem('PRINCIPAL'))}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="w-full h-px bg-slate-200 my-4"></div>
+            </Card>
+          </motion.div>
+
+          {/* Foreclosure Details Card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="mb-6"
+          >
+            <Card className="p-5 rounded-xl shadow-md border-0 bg-white/95 overflow-hidden">
               <h3 className="font-semibold text-slate-700 text-lg mb-4">Foreclosure Details</h3>
               
-              {urlLoading ? (
-                <div className="flex flex-col justify-center items-center h-40 mb-6">
-                  <svg className="animate-spin h-10 w-10 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span className="text-slate-500 text-center">
-                    Loading payment details...<br />
-                    <span className="text-xs text-slate-400">This may take a few moments</span>
-                  </span>
-                </div>
-              ) : paymentDetails ? (
+              {paymentDetails && breakupDetails ? (
                 <div className="space-y-3 mb-6">
+                  {/* Outstanding Principal */}
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-500">Total Amount Due</span>
-                    <span className="font-semibold text-slate-800">₹{paymentDetails.amount}</span>
+                    <span className="text-sm text-slate-500">Outstanding Principal</span>
+                    <span className="font-semibold text-slate-800">
+                      {formatCurrency(findBreakupItem('OUTSTANDING_PRINCIPAL'))}
+                    </span>
                   </div>
+                  
+                  {/* Outstanding Interest */}
                   <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-500">Outstanding Interest</span>
+                    <span className="font-semibold text-slate-800">
+                      {formatCurrency(findBreakupItem('OUTSTANDING_INTEREST'))}
+                    </span>
+                  </div>
+                  
+                  {/* Foreclosure Charges - Highlighted */}
+                  <div className="flex justify-between items-center p-2 rounded-lg bg-amber-50">
+                    <span className="text-sm font-medium text-amber-700">Foreclosure Charges</span>
+                    <span className="font-semibold text-amber-800">
+                      {formatCurrency(findBreakupItem('FORECLOSURE_CHARGES'))}
+                    </span>
+                  </div>
+                  
+                  <div className="w-full h-px bg-slate-200 my-2"></div>
+                  
+                  {/* Total Amount Due */}
+                  <div className="flex justify-between items-center bg-blue-50 p-2 rounded-lg">
+                    <span className="text-sm font-medium text-blue-700">Total Amount Due</span>
+                    <span className="font-bold text-lg text-blue-800">₹{paymentDetails.amount}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center mt-2">
                     <span className="text-sm text-slate-500">Currency</span>
                     <span className="font-semibold text-slate-800">{paymentDetails.currency}</span>
                   </div>
+                  
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-slate-500">Status</span>
-                    <span className="font-semibold text-slate-800">{paymentDetails.status}</span>
+                    <span className="font-semibold text-red-600">NOT PAID</span>
                   </div>
                 </div>
               ) : (
@@ -243,15 +368,15 @@ const Foreclosure = () => {
               <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl h-12"
                 onClick={handleProceedToPayment}
-                disabled={!paymentUrl || processing || urlLoading}
+                disabled={!paymentUrl || processing}
               >
-                {processing || urlLoading ? (
+                {processing ? (
                   <span className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    {urlLoading ? "Loading Payment Details..." : "Processing..."}
+                    Processing...
                   </span>
                 ) : (
                   "Proceed to Payment"
@@ -259,6 +384,62 @@ const Foreclosure = () => {
               </Button>
             </Card>
           </motion.div>
+
+          {/* Breakdown of Charges Card */}
+          {breakupDetails && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="mb-6"
+            >
+              <Card className="p-5 rounded-xl shadow-md border-0 bg-white/95 overflow-hidden">
+                <h3 className="font-semibold text-slate-700 text-lg mb-4">Breakdown of Charges</h3>
+                
+                <div className="space-y-2 mb-4">
+                  {/* Process Fee */}
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Processing Fee</span>
+                    <span className="font-medium text-slate-800">
+                      {formatCurrency(findBreakupItem('PROCESSING_FEE'))}
+                    </span>
+                  </div>
+                  
+                  {/* Insurance Charges */}
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Insurance Charges</span>
+                    <span className="font-medium text-slate-800">
+                      {formatCurrency(findBreakupItem('INSURANCE_CHARGES'))}
+                    </span>
+                  </div>
+                  
+                  {/* Other Charges */}
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Other Charges</span>
+                    <span className="font-medium text-slate-800">
+                      {formatCurrency(findBreakupItem('OTHER_CHARGES'))}
+                    </span>
+                  </div>
+                  
+                  {/* Other Upfront Charges */}
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Other Upfront Charges</span>
+                    <span className="font-medium text-slate-800">
+                      {formatCurrency(findBreakupItem('OTHER_UPFRONT_CHARGES'))}
+                    </span>
+                  </div>
+                  
+                  {/* Net Disbursed Amount */}
+                  <div className="flex justify-between items-center text-sm border-t border-slate-200 pt-2 mt-2">
+                    <span className="text-slate-500">Net Disbursed Amount</span>
+                    <span className="font-medium text-green-600">
+                      {formatCurrency(findBreakupItem('NET_DISBURSED_AMOUNT'))}
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Error Display */}
           {error && (

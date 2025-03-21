@@ -9,6 +9,7 @@ const useAuthStore = create(
       transactionId: null,
       foreclosureTransactionId: null,
       prepaymentTransactionId: null,
+      MissedemiTransactionID: null,
       providerId: null,
       igmTransactionId: null,
       isAuthenticated: false,
@@ -31,6 +32,9 @@ const useAuthStore = create(
       setprepaymentTransactionId: (prepaymentTransactionId) => set({
         prepaymentTransactionId,
       }),
+      setMissedemiTransactionID: (MissedemiTransactionID) => set({
+        MissedemiTransactionID,
+      }),
 
       setProviderId: (providerId) => set({
         providerId,
@@ -50,6 +54,7 @@ const useAuthStore = create(
         transactionId: null,
         foreclosureTransactionId: null,
         prepaymentTransactionId: null,
+        MissedemiTransactionID: null,
         igmTransactionId: null,
         providerId: null,
         isAuthenticated: false,
